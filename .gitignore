@@ -1,0 +1,22 @@
+# Ignore all contents of /logs/, aber nicht den Ordner selbst
+/logs/*
+!/logs/.gitkeep
+
+# Composer
+/vendor/
+
+# IDEs & Editor-Dateien
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+.idea/
+.vscode/
+
+# Systemdateien
+.DS_Store
+Thumbs.db
+
+# Umgebungsspezifisch
+.env

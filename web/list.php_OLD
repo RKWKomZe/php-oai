@@ -1,0 +1,10 @@
+<?php session_start(); ?>
+
+<div class="container py-4">
+    <?php include __DIR__ . '/fragment/header.php'; ?>
+    <h1 class="mb-4">Produktliste</h1>
+    <p>Hier könnten später alle Produkte aus der OAI-Datenbank angezeigt werden.</p>
+    <a href="/show.php?id=demo123" class="btn btn-secondary">Beispielprodukt anzeigen</a>
+    <?php include __DIR__ . '/fragment/footer.php'; ?>
+</div>
+

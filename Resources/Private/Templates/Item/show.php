@@ -1,0 +1,55 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+$returnTo = $_GET['returnTo'] ?? null;
+ ?>
+
+<h1>Record Details</h1>
+
+<?php
+
+echo $returnTo
+    ? '<a href="' . htmlspecialchars($returnTo) . '" class="btn btn-sm btn-outline-secondary mb-3">&larr; Zurück zur Liste</a>'
+    : LinkHelper::renderLink('Item', 'list', ['repo' => $item->getRepo()], '&larr; Zurück zur Liste', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Identifier</th>
+        <td><?= htmlspecialchars($item->getIdentifier()) ?></td>
+    </tr>
+    <tr>
+        <th>Datestamp</th>
+        <td><?= htmlspecialchars($item->getDatestamp()) ?></td>
+    </tr>
+    <tr>
+        <th>Prefix</th>
+        <td><?= htmlspecialchars($item->getMetadataPrefix()) ?></td>
+    </tr>
+    <tr>
+        <th>Status</th>
+        <td>
+            <?php if ($item->isDeleted()): ?>
+                <span class="badge bg-danger">Deleted</span>
+            <?php else: ?>
+                <span class="badge bg-success">Active</span>
+            <?php endif; ?>
+        </td>
+    </tr>
+    <tr>
+        <th>Created</th>
+        <td><?= htmlspecialchars($item->getCreated()) ?></td>
+    </tr>
+    <tr>
+        <th>Updated</th>
+        <td><?= htmlspecialchars($item->getUpdated()) ?></td>
+    </tr>
+    <tr>
+        <th>Metadata (XML)</th>
+        <td>
+            <pre class="bg-light p-2"><?= htmlspecialchars($item->getMetadata()) ?></pre>
+        </td>
+    </tr>
+</table>

@@ -1,0 +1,42 @@
+<?php
+use RKW\OaiConnector\Integration\Shopware\ShopwareOaiFetcher;
+use RKW\OaiConnector\Integration\Shopware\ShopwareOaiUpdater;
+use Symfony\Component\VarDumper\VarDumper;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../bootstrap.php';
+
+$config = \RKW\OaiConnector\Utility\ConfigLoader::load();
+
+$messages = [];
+
+try {
+
+    $config = require __DIR__ . '/../config/config.php';
+
+    $fetcher = new ShopwareOaiFetcher();
+    $products = $fetcher->fetchAndTransform();
+//VarDumper::dump($products); exit;
+   // VarDumper::dump($products);
+
+    $updater = new ShopwareOaiUpdater(
+        $config['database']['host'],
+        $config['database']['user'],
+        $config['database']['password'],
+        $config['database']['name'],
+        'demo',
+        true,
+        $products
+    );
+    $updater->run();
+
+    $messages[] = ['type' => 'success', 'text' => count($products) . " Produkte erfolgreich importiert."];
+} catch (Exception $e) {
+    $messages[] = ['type' => 'danger', 'text' => 'Fehler: ' . $e->getMessage()];
+}
+
+session_start();
+$_SESSION['messages'] = $messages;
+
+header('Location: index.php');
+exit;
