@@ -2,16 +2,19 @@
 
 namespace RKW\OaiConnector\Repository;
 
-use RKW\OaiConnector\Model\Repo;
+use RKW\OaiConnector\Model\OaiRepo;
 
-class RepoRepository extends AbstractRepository
+class OaiRepoRepository extends AbstractRepository
 {
-    protected ?string $modelClass = Repo::class;
+    protected ?string $modelClass = OaiRepo::class;
+    protected ?string $tableName = 'oai_repo';
 
+    /*
     protected function getTableName(): string
     {
         return 'oai_repo';
     }
+    */
 
     protected function getRepoColumnName(): string
     {

@@ -35,10 +35,12 @@ class ImportController extends AbstractController
             $records
         );
 
+        $updater->run();
+
     //    $updater->setSpecArray(['products']); // falls erwartet
     //    $updater->setMetadataPrefixArray(['oai_dc']); // falls erwartet
     //    $updater->setRecords($records);
-        $updater->run();
+
 
         FlashMessage::add(count($records) . ' Produkte erfolgreich importiert.', FlashMessage::TYPE_SUCCESS);
 

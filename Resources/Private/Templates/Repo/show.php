@@ -2,18 +2,15 @@
 
 use RKW\OaiConnector\Utility\LinkHelper;
 
-$returnTo = $_GET['returnTo'] ?? null;
  ?>
-
-<h1>Record Details</h1>
 
 <?php
 
-echo $returnTo
-    ? '<a href="' . htmlspecialchars($returnTo) . '" class="btn btn-sm btn-outline-secondary mb-3">&larr; Zurück zur Liste</a>'
-    : LinkHelper::renderLink('Item', 'list', ['repo' => $item->getRepo()], '&larr; Zurück zur Liste', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&larr; Zurück zur Liste', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
 
 ?>
+<?php // include __DIR__ . '/../../Partials/Repo/EditButton.php'; ?>
+<?php // include __DIR__ . '/../../Partials/Repo/DeleteButton.php'; ?>
 
 <h1>Repository Details</h1>
 
@@ -69,6 +66,11 @@ echo $returnTo
     </tr>
     </tbody>
 </table>
+
+<?php if (!empty($oaiRepoDescription->getDescription())): ?>
+    <h5>Set Description (XML)</h5>
+    <pre class="bg-light p-2 border"><?= htmlspecialchars($oaiRepoDescription->getDescription()) ?></pre>
+<?php endif; ?>
 
 <p>
     <a href="<?= $this->linkHelper->create('Repo', 'list') ?>" class="btn btn-secondary">Back to list</a>

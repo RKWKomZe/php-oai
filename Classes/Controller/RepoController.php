@@ -3,29 +3,35 @@
 namespace RKW\OaiConnector\Controller;
 
 use RKW\OaiConnector\Factory\PaginationFactory;
-use RKW\OaiConnector\Repository\RepoDescriptionRepository;
-use RKW\OaiConnector\Repository\RepoRepository;
+use RKW\OaiConnector\Mapper\GenericModelMapper;
+use RKW\OaiConnector\Model\OaiRepo;
+use RKW\OaiConnector\Model\OaiRepoDescription;
+use RKW\OaiConnector\Repository\OaiRepoDescriptionRepository;
+use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
+use Symfony\Component\VarDumper\VarDumper;
 
 class RepoController extends AbstractController
 {
-    private ?RepoRepository $repoRepository = null;
-    private ?RepoDescriptionRepository $repoDescriptionRepository = null;
+    private ?OaiRepoRepository $oaiRepoRepository = null;
+    private ?OaiRepoDescriptionRepository $oaiRepoDescriptionRepository = null;
 
-    protected function getRepoRepository(): RepoRepository
+    protected function getOaiRepoRepository(): OaiRepoRepository
     {
-        return $this->repoRepository ??= new RepoRepository();
+        return $this->oaiRepoRepository ??= new OaiRepoRepository();
     }
 
-    protected function getRepoDescriptionRepository(): RepoDescriptionRepository
+    protected function getOaiRepoDescriptionRepository(): OaiRepoDescriptionRepository
     {
-        return $this->repoDescriptionRepository ??= new RepoDescriptionRepository();
+        return $this->oaiRepoDescriptionRepository ??= new OaiRepoDescriptionRepository();
     }
 
     public function __construct()
     {
-        $this->repoRepository = $this->getRepoRepository();
+        parent::__construct();
+        $this->oaiRepoRepository = $this->getOaiRepoRepository();
+        $this->oaiRepoDescriptionRepository = $this->getOaiRepoDescriptionRepository();
     }
 
     /**
@@ -35,7 +41,7 @@ class RepoController extends AbstractController
     {
         $pagination = PaginationFactory::fromRequestValues();
 
-        $repoList = $this->repoRepository->withPagination($pagination)->withModels()->findAll();
+        $repoList = $this->oaiRepoRepository->withPagination($pagination)->withModels()->findAll();
 
         $this->render('list', [
             'repoList' => $repoList,
@@ -53,7 +59,7 @@ class RepoController extends AbstractController
             return;
         }
 
-        $oaiRepo = $this->repoRepository
+        $oaiRepo = $this->oaiRepoRepository
             ->withModels()
             ->findOneBy([
                 'id' => $identifier
@@ -62,14 +68,18 @@ class RepoController extends AbstractController
         // @toDo: Ggf warnung in den VIEW verlegen?
         if (!$oaiRepo) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
-            Redirect::to('list', 'Index');
+            Redirect::to('list', 'Repo');
             return;
         }
+
+        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
+
 
         // render view with model object
         $this->render('show', [
             'oaiRepo' => $oaiRepo,
             'id' => $identifier,
+            'oaiRepoDescription' => $oaiRepoDescription
         ]);
     }
 
@@ -80,36 +90,24 @@ class RepoController extends AbstractController
 
     public function create(): void
     {
-        $data = $_POST;
+        $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
+        $oaiRepoDescription = GenericModelMapper::map($_POST, OaiRepoDescription::class);
+        $oaiRepoDescription->setRepo($oaiRepo->getId());
 
-        // Basic validation for required fields
-        $requiredFields = ['id', 'repositoryName', 'baseURL', 'protocolVersion', 'deletedRecord', 'granularity'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                FlashMessage::add("Missing required field: {$field}",  FlashMessage::TYPE_DANGER);
-                $this->redirect('Repo', 'new');
-                return;
-            }
-        }
+        $oaiRepo->setUpdated(date('Y-m-d H:i:s'));
 
-        // Map form data to Repo model using GenericModelMapper
-        $mapper = new \RKW\OaiConnector\Mapper\GenericModelMapper();
-        /** @var \RKW\OaiConnector\Model\Repo $repo */
-        $repo = $mapper->mapArrayToModel($data, \RKW\OaiConnector\Model\Repo::class);
+        $success = $this->oaiRepoRepository->insert($oaiRepo);
 
-        // Set/update timestamp (not passed from form)
-        $repo->setUpdated(date('Y-m-d H:i:s'));
+        $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
 
-        // Save to database
-        $repoRepository = new \RKW\OaiConnector\Repository\RepoRepository();
-        $success = $repoRepository->insert($repo);
+        // @toDo: Meldung auch für Description?
 
         if ($success) {
-            FlashMessage::add('Repository created successfully.',  FlashMessage::TYPE_SUCCESS);
-            $this->redirect('Repo', 'list');
+            FlashMessage::add('Repository wurde erfolgreich erstellt. Dazu sollte im anschluss eine "OAI Meta" mit verknüpften Schema-Prefix (z.B. "oai_dc= angelegt werden.',  FlashMessage::TYPE_SUCCESS);
+            Redirect::to('show', 'Repo', ['id'  => $oaiRepo->getId()]);
         } else {
             FlashMessage::add('Repository could not be saved.',   FlashMessage::TYPE_DANGER);
-            $this->redirect('Repo', 'new');
+            Redirect::to('new', 'Repo');
         }
     }
 
@@ -117,33 +115,57 @@ class RepoController extends AbstractController
 
     public function edit(): void
     {
-        $id = $_GET['id'] ?? '';
-        $oaiRepo = $this->repoRepository->findById($id);
+        $identifier = $_GET['id'] ?? null;
 
-        if (!$oaiRepo) {
-            echo "Repository nicht gefunden.";
+        if (!$identifier) {
+            FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
+            Redirect::to('list', 'Repo');
             return;
         }
 
+        $oaiRepo = $this->oaiRepoRepository->withModels()->findById($identifier);
+
+        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
+
         $this->render('edit', [
-            'oaiRepo' => $oaiRepo
+            'oaiRepo' => $oaiRepo,
+            'oaiRepoDescription' => $oaiRepoDescription
         ]);
     }
 
 
     public function update(): void
     {
-        $repo = new \RKW\OaiConnector\Model\Repo($_POST);
+        $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
+        $oaiRepoDescription = GenericModelMapper::map($_POST, OaiRepoDescription::class);
+        $oaiRepoDescription->setRepo($oaiRepo->getId());
 
-        $this->update($repo);
+        $oaiRepo->setUpdated(date('Y-m-d H:i:s'));
+        $this->oaiRepoRepository->update($oaiRepo);
+
+        $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
+
+        FlashMessage::add('Datensatz erfolgreich bearbeitet.', FlashMessage::TYPE_SUCCESS);
+
+        Redirect::to('show', 'Repo', ['id' => $oaiRepo->getId()]);
     }
 
 
     public function delete(): void
     {
-        $id = $_GET['id'] ?? '';
+        $oaiRepo = GenericModelMapper::map($_GET, OaiRepo::class);
 
-        $this->deleteModel($repo);
+        // deleteDescription
+        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
+        if ($oaiRepoDescription) {
+            $this->oaiRepoDescriptionRepository->delete($oaiRepoDescription, ['repo']);
+        }
+
+        $this->oaiRepoRepository->delete($oaiRepo);
+
+        FlashMessage::add('Datensatz gelöscht.', FlashMessage::TYPE_SUCCESS);
+
+        Redirect::to('list', 'Repo', ['id' => $oaiRepo->getId()]);
     }
 
 

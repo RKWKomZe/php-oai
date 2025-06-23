@@ -24,7 +24,8 @@ if (!empty($flashMessages)): ?>
             <div class="alert alert-<?= $type ?> alert-dismissible fade show d-flex align-items-center" role="alert">
                 <i class="bi <?= $icon ?> me-2" aria-hidden="true"></i>
                 <div><?= htmlspecialchars($message['text']) ?></div>
-                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="fadeout-timer"></div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         <?php endforeach; ?>
     </div>

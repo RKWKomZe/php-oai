@@ -49,3 +49,17 @@ body {
     color: white;
 }
 
+/* alert dismiss */
+.alert-dismissible .fadeout-timer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: rgba(0, 0, 0, 0.3);
+    animation: shrink 15s linear forwards;
+}
+
+@keyframes shrink {
+    from { width: 100%; }
+    to { width: 0%; }
+}

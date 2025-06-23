@@ -4,7 +4,7 @@ namespace RKW\OaiConnector\Controller;
 
 use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
-use RKW\OaiConnector\Repository\RepoRepository;
+use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
@@ -14,16 +14,16 @@ class ItemController extends AbstractController
 {
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
 
-    private ?RepoRepository $repoRepository = null;
+    private ?OaiRepoRepository $repoRepository = null;
 
     protected function getOaiItemMetaRepository(): OaiItemMetaRepository
     {
         return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
     }
 
-    protected function getRepoRepository(): RepoRepository
+    protected function getRepoRepository(): OaiRepoRepository
     {
-        return $this->repoRepository ??= new RepoRepository($this->settings['oai']['defaultRepoId']);
+        return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);
     }
 
 

@@ -22,7 +22,13 @@ use RKW\OaiConnector\Utility\MenuHelper;
                     <?php echo MenuHelper::renderMenuLink('Item', 'list', 'Datensätze'); ?>
                 </li>
                 <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink('Repo', 'list', 'Repositories'); ?>
+                    <?php echo MenuHelper::renderMenuLink('Repo', 'list', 'OAI Repositories'); ?>
+                </li>
+                <li class="nav-item">
+                    <?php echo MenuHelper::renderMenuLink('Meta', 'list', 'OAI Meta'); ?>
+                </li>
+                <li class="nav-item">
+                    <?php echo MenuHelper::renderMenuLink('Set', 'list', 'OAI Set'); ?>
                 </li>
             </ul>
         </div>

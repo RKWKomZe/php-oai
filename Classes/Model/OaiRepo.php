@@ -2,7 +2,7 @@
 
 namespace RKW\OaiConnector\Model;
 
-class Repo
+class OaiRepo
 {
     protected string $id = '';
     protected string $repositoryName = '';
@@ -17,6 +17,7 @@ class Repo
     protected string $updated = '';
     protected string $comment = '';
 
+    /*
     public function __construct(array $data = [])
     {
         $this->id = $data['id'] ?? '';
@@ -32,6 +33,7 @@ class Repo
         $this->updated = $data['updated'] ?? '';
         $this->comment = $data['comment'] ?? '';
     }
+    */
 
     // --- Getter & Setter Methods ---
 

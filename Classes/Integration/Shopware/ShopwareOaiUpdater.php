@@ -28,7 +28,13 @@ class ShopwareOaiUpdater extends \Oai_Updater
         $this->records = $records;
     }
 
-    public function objects($identifierArray = [], $from = null, $to = null, $noDeleted = false, $set = null)
+    public function objects(
+        $identifierArray = [],
+        $from = null,
+        $to = null,
+        $noDeleted = false,
+        $set = null
+    )
     {
         $this->cursor = 0;
         return $this->records;
@@ -95,7 +101,15 @@ XML;
 
     public function about($f, $metadataPrefix): array
     {
-        return [];
+        $productName = htmlspecialchars($f['title'] ?? 'unbekannt');
+
+        return [
+            '<about>
+            <source>Shopware</source>
+            <product>' . $productName . '</product>
+            <imported>' . date('c') . '</imported>
+        </about>'
+        ];
     }
 
     public function id($f): mixed
@@ -108,12 +122,48 @@ XML;
         return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 
+    /**
+     * Purpose:
+     * setSpec is used to identify and retrieve specific sets of records from a repository, rather than the entire dataset.
+     * Format:
+     * setSpec is a string value, typically consisting of alphanumeric characters and potentially colons (":") to indicate hierarchical relationships between sets.
+     * Uniqueness:
+     * Each setSpec within a repository must be unique.
+     * Hierarchical Sets:
+     * setSpec can be used to represent hierarchical set structures, where colons separate levels in the hierarchy (e.g., parent:child:grandchild).
+ *
+     * @return array
+     */
     public function setSpecArray(): array
     {
-        return [];
+        return ['pub:(science)'];
+        // Das set muss vorher existieren. Hier legen wir es einfach mal via "Piratenmethode" an:
 
-        // Falls man doch "sets" nutzen möchte
-        //return isset($f['sets']) ? (array)$f['sets'] : [];
+        /*
+        $setSpec = 'shopware';
+        $setName = 'Shopware-Daten';
+
+        // ACHTUNG: Sicherstellen, dass _backend das richtige Objekt ist
+        if (method_exists($this->_backend, 'setSpecExists') && !$this->_backend->setSpecExists($setSpec)) {
+            $this->_backend->setSpecCreate($setSpec, $setName);
+        }
+
+
+        return ['shopware'];
+        */
+
+
+        /*
+        $sets = [];
+
+        foreach ($this->records as $record) {
+            if (!empty($record['category'])) {
+                $sets[] = strtolower($record['category']); // z. B. 'electronics', 'books'
+            }
+        }
+
+        return array_unique($sets);
+        */
     }
 
     public function metadataPrefixArray()

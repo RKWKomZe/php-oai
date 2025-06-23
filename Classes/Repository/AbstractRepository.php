@@ -67,12 +67,13 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
 
     /**
-     * @param int $id
+     * @param string $id
      * @return array|null
+     * @throws \ReflectionException
      */
-    public function findById(int $id): ?array
+    public function findById(string $id): array|object|null
     {
-        $this->requireRepoContext();
+        //$this->requireRepoContext();
 
         $whereClauses = ['id = :id'];
         $params = [':id' => $id];
@@ -86,7 +87,8 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $stmt->execute($params);
 
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $result ?: null;
+
+        return $result ? $this->finalizeResult($result): null;
     }
 
 
@@ -129,11 +131,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
-    /**
-     *  UNTESTED!
-     */
-    public function update(object $model, string $primaryKey = 'id'): bool
+    public function upsert(object $model): bool
     {
         if (empty($this->tableName)) {
             throw new \RuntimeException('No table name defined in repository.');
@@ -143,8 +141,60 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $properties = $reflection->getProperties(\ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);
 
         $columns = [];
+        $placeholders = [];
+        $updateClauses = [];
         $values = [];
-        $primaryValue = null;
+
+        foreach ($properties as $property) {
+            $name = $property->getName();
+            $getter = 'get' . ucfirst($name);
+
+            if (!method_exists($model, $getter)) {
+                continue;
+            }
+
+            $value = $model->$getter();
+            $columns[] = $name;
+            $placeholders[] = ':' . $name;
+            $updateClauses[] = "{$name} = :update_{$name}";
+
+            $values[$name] = $value;
+            $values["update_{$name}"] = $value;
+        }
+
+        $sql = sprintf(
+            'INSERT INTO %s (%s) VALUES (%s) ON DUPLICATE KEY UPDATE %s',
+            $this->tableName,
+            implode(', ', $columns),
+            implode(', ', $placeholders),
+            implode(', ', $updateClauses)
+        );
+
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute($values);
+    }
+
+
+
+
+    /**
+     *  UNTESTED!
+     */
+    public function update(object $model, array|string $primaryKey = 'id'): bool
+    {
+        if (empty($this->tableName)) {
+            throw new \RuntimeException('No table name defined in repository.');
+        }
+
+        // Support both single key and multiple keys
+        $primaryKeys = is_array($primaryKey) ? $primaryKey : [$primaryKey];
+
+        $reflection = new \ReflectionClass($model);
+        $properties = $reflection->getProperties(\ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);
+
+        $columns = [];
+        $values = [];
+        $whereClauses = [];
 
         foreach ($properties as $property) {
             $name = $property->getName();
@@ -156,27 +206,27 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
             $value = $model->$getter();
 
-            if ($name === $primaryKey) {
-                $primaryValue = $value;
-                continue; // don't include in SET clause
+            if (in_array($name, $primaryKeys, true)) {
+                if ($value === null || $value === '') {
+                    throw new \InvalidArgumentException("Primary key '{$name}' must not be null or empty.");
+                }
+                $whereClauses[] = "{$name} = :__pk_{$name}";
+                $values["__pk_{$name}"] = $value;
+            } else {
+                $columns[] = "{$name} = :{$name}";
+                $values[$name] = $value;
             }
-
-            $columns[] = "{$name} = :{$name}";
-            $values[$name] = $value;
         }
 
-        if ($primaryValue === null) {
-            throw new \InvalidArgumentException("Primary key '{$primaryKey}' must not be null.");
+        if (empty($whereClauses)) {
+            throw new \InvalidArgumentException('No primary key values found.');
         }
-
-        $values[$primaryKey] = $primaryValue;
 
         $sql = sprintf(
-            'UPDATE %s SET %s WHERE %s = :%s',
+            'UPDATE %s SET %s WHERE %s',
             $this->tableName,
             implode(', ', $columns),
-            $primaryKey,
-            $primaryKey
+            implode(' AND ', $whereClauses)
         );
 
         $stmt = $this->pdo->prepare($sql);
@@ -185,36 +235,46 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
 
 
+
     /**
      *  UNTESTED!
      */
-    public function deleteModel(object $model, string $primaryKey = 'id'): bool
+    public function delete(object $model, array|string $primaryKeys = 'id'): bool
     {
         if (empty($this->tableName)) {
             throw new \RuntimeException('No table name defined in repository.');
         }
 
-        $getter = 'get' . ucfirst($primaryKey);
-        if (!method_exists($model, $getter)) {
-            throw new \InvalidArgumentException("Model has no getter for primary key '{$primaryKey}'");
-        }
+        // Umwandlung in Array, falls nur ein Key übergeben wurde
+        $primaryKeys = (array) $primaryKeys;
+        $conditions = [];
+        $parameters = [];
 
-        $primaryValue = $model->$getter();
+        foreach ($primaryKeys as $key) {
+            $getter = 'get' . ucfirst($key);
+            if (!method_exists($model, $getter)) {
+                throw new \InvalidArgumentException("Model has no getter for primary key '{$key}'");
+            }
 
-        if ($primaryValue === null || $primaryValue === '') {
-            throw new \InvalidArgumentException("Primary key value must not be empty.");
+            $value = $model->$getter();
+            if ($value === null || $value === '') {
+                throw new \InvalidArgumentException("Primary key '{$key}' must not be empty.");
+            }
+
+            $conditions[] = "$key = :$key";
+            $parameters[$key] = $value;
         }
 
         $sql = sprintf(
-            'DELETE FROM %s WHERE %s = :%s',
+            'DELETE FROM %s WHERE %s',
             $this->tableName,
-            $primaryKey,
-            $primaryKey
+            implode(' AND ', $conditions)
         );
 
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$primaryKey => $primaryValue]);
+        return $stmt->execute($parameters);
     }
+
 
 
 

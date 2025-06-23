@@ -14,7 +14,7 @@ return [
         'basePath' => realpath(__DIR__ . '/../'),
     ],
     'oai' => [
-        'defaultRepoId' => 'demo',
+        'defaultRepoId' => 'shopware',
     ],
     'api' => [
         'shopware' => [

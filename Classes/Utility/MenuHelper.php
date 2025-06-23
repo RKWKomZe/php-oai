@@ -13,10 +13,14 @@ class MenuHelper
         $currentController = $_GET['controller'] ?? null;
         $currentAction = $_GET['action'] ?? null;
 
-        // Determine if this is the active link
-        $isActive =
-            ($controller === null && $currentController === null) ||
-            ($controller === $currentController && $action === $currentAction);
+        // Normalize for case-insensitive comparison
+        $controller = $controller !== null ? strtolower($controller) : null;
+        $action = $action !== null ? strtolower($action) : null;
+        $currentController = $currentController !== null ? strtolower($currentController) : null;
+        $currentAction = $currentAction !== null ? strtolower($currentAction) : null;
+
+        // Determine if this is the active link (Controller match is sufficient)
+        $isActive = $controller !== null && $controller === $currentController;
 
         $class = 'nav-link' . ($isActive ? ' active text-orange' : '');
 

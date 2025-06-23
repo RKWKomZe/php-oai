@@ -46,7 +46,7 @@ abstract class AbstractController
 
         $templateFile = $config['app']['basePath'] . "/Resources/Private/Templates/{$controllerName}/{$methodName}.php";
 
-        include $config['app']['basePath'] . '/Resources/Private/Layouts/DefaultLayout.php';
+        include_once $config['app']['basePath'] . '/Resources/Private/Layouts/DefaultLayout.php';
         renderLayout($templateFile, $data);
     }
 }
