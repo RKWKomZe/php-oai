@@ -13,16 +13,18 @@
         </select>
     </div>
 
-    <div class="col-auto">
-        <label for="limit" class="form-label">Items per page:</label>
-        <select name="limit" id="limit" class="form-select">
-            <?php foreach ($pagination->getAllowedLimits() as $option): ?>
-                <option value="<?= $option ?>" <?= $option === $pagination->getLimit() ? 'selected' : '' ?>>
-                    <?= $option ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+    <?php if (isset($pagination)): ?>
+        <div class="col-auto">
+            <label for="limit" class="form-label">Items per page:</label>
+            <select name="limit" id="limit" class="form-select">
+                <?php foreach ($pagination->getAllowedLimits() as $option): ?>
+                    <option value="<?= $option ?>" <?= $option === $pagination->getLimit() ? 'selected' : '' ?>>
+                        <?= $option ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+    <?php endif; ?>
 
     <div class="col-auto align-self-end">
         <button type="submit" class="btn btn-secondary">Apply</button>

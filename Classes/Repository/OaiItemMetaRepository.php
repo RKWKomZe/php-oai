@@ -5,6 +5,7 @@ namespace RKW\OaiConnector\Repository;
 use RKW\OaiConnector\Model\OaiItemMeta;
 use RKW\OaiConnector\Utility\Pagination;
 use PDO;
+use Symfony\Component\VarDumper\VarDumper;
 
 class OaiItemMetaRepository extends AbstractRepository
 {
@@ -54,6 +55,30 @@ class OaiItemMetaRepository extends AbstractRepository
         $stmt->execute(['repoId' => $repoId]);
 
         return (int)$stmt->fetchColumn();
+    }
+
+
+    /**
+     * find all by ID list
+     *
+     * @param string $repoId
+     * @param array $prefixedIds
+     * @return array
+     */
+    public function findByIdList(string $repoId, array $prefixedIds): array
+    {
+        if (empty($prefixedIds)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($prefixedIds), '?'));
+        $sql = "SELECT identifier FROM oai_item_meta WHERE repo = ? AND identifier IN ($placeholders)";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(array_merge([$repoId], $prefixedIds));
+
+        return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'identifier');
+
     }
 }
 

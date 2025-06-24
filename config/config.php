@@ -40,5 +40,8 @@ return [
         'enable_csrf' => true,
         'admin_ips' => ['127.0.0.1'],
     ],
+    'testing' => [
+        'localShopwareUrl' => 'https://rkw-shopware.ddev.site'
+    ]
 
 ];

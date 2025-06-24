@@ -11,6 +11,7 @@ class OaiItemMeta
     protected string $metadataPrefix = '';
     protected string $datestamp = '';
     protected int $deleted = 0;
+    protected ?string $published = null;
     protected string $metadata = '';
     protected string $created = '';
     protected string $updated = '';
@@ -23,6 +24,7 @@ class OaiItemMeta
         $this->identifier = $data['identifier'] ?? '';
         $this->metadataPrefix = $data['metadataPrefix'] ?? '';
         $this->datestamp = $data['datestamp'] ?? '';
+        $this->published = (int)($data['deleted'] ?? '');
         $this->deleted = (int)($data['deleted'] ?? 0);
         $this->metadata = $data['metadata'] ?? '';
         $this->created = $data['created'] ?? '';
@@ -51,6 +53,9 @@ class OaiItemMeta
 
     public function isDeleted(): bool { return $this->deleted === 1; }
     public function setDeleted(bool $deleted): void { $this->deleted = $deleted ? 1 : 0; }
+
+    public function isPublished(): string { return $this->published; }
+    public function setPublished(?string $published): void { $this->published = $published; }
 
     public function getMetadata(): string { return $this->metadata; }
     public function setMetadata(string $metadata): void { $this->metadata = $metadata; }

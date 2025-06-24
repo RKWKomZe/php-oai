@@ -136,7 +136,10 @@ XML;
      */
     public function setSpecArray(): array
     {
-        return ['pub:(science)'];
+
+        // @toDo: We need a real handling here...
+
+        return ['prod'];
         // Das set muss vorher existieren. Hier legen wir es einfach mal via "Piratenmethode" an:
 
         /*

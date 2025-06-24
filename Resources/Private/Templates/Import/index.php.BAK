@@ -1,0 +1,12 @@
+<?php
+?>
+
+
+
+<div class="container py-4">
+
+    <h1>Import</h1>
+
+    <a href="/index.php?controller=Import&action=list" class="btn btn-primary">Run Shopware Import</a>
+
+</div>

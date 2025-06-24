@@ -10,6 +10,11 @@ use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 use Symfony\Component\VarDumper\VarDumper;
 
+/**
+ *
+ * @toDo: Hier prüfen, ob man nicht auf "Oai_Backend.php" zurückgreift zum auslesen von Informationen!
+ *
+ */
 class ItemController extends AbstractController
 {
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
@@ -119,7 +124,6 @@ class ItemController extends AbstractController
         if (!$identifier || !$repoId) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Index');
-            return;
         }
 
         $item = $this->oaiItemMetaRepository
@@ -134,7 +138,6 @@ class ItemController extends AbstractController
         if (!$item) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
             Redirect::to('list', 'Index');
-            return;
         }
 
         // render view with model object
@@ -143,5 +146,7 @@ class ItemController extends AbstractController
             'repo' => $repoId,
         ]);
     }
+
+
 
 }

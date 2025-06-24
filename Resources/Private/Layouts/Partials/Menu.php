@@ -19,6 +19,9 @@ use RKW\OaiConnector\Utility\MenuHelper;
                     <?php echo MenuHelper::renderMenuLink(null, null, 'Startseite'); ?>
                 </li>
                 <li class="nav-item">
+                    <?php echo MenuHelper::renderMenuLink('Import', 'list', 'Import'); ?>
+                </li>
+                <li class="nav-item">
                     <?php echo MenuHelper::renderMenuLink('Item', 'list', 'Datensätze'); ?>
                 </li>
                 <li class="nav-item">

@@ -122,97 +122,118 @@ $entries = $repo->findBy(['active' => 1], ['created_at' => 'DESC'], $pagination)
 
 ## 🗂️ Datenbankschema (OAI-Server)
 
-Das Projekt verwendet drei zentrale Tabellen zur Verwaltung von OAI-PMH-konformen Metadaten. Diese Struktur ermöglicht eine saubere Trennung von Kerninformationen, zusätzlichen About-Daten und Sets.
+-> Siehe lib
 
 ---
 
-### 📄 `oai_item_meta`
+### Data array from shopware request
 
-**Beschreibung:**  
-Zentrale Tabelle für OAI-Metadaten. Sie enthält sowohl technische Informationen (Versionierung, Status) als auch das Metadatenformat und den serialisierten XML-Inhalt.
+```
+ array:1 [▼
+  0 => array:97 [▼
+    "extensions" => array:2 [▶]
+    "_uniqueIdentifier" => "0197350a258d7dfa9629b219fc416fed"
+    "versionId" => "0fa91ce3e96a4bc2be4bd9ce752c3425"
+    "translated" => array:10 [▶]
+    "createdAt" => "2025-06-03T09:06:40.618+00:00"
+    "updatedAt" => "2025-06-10T06:28:34.196+00:00"
+    "parentId" => null
+    "childCount" => 0
+    "autoIncrement" => 1
+    "taxId" => "0197349d1f8e70e6ba0152c7f8adb80e"
+    "manufacturerId" => "0197349d1fa27228a30b6baa1fd614c8"
+    "unitId" => null
+    "active" => true
+    "displayGroup" => "dcbb0710a89ef4f2ab66f042eea20c66"
+    "price" => array:1 [▶]
+    "manufacturerNumber" => null
+    "ean" => null
+    "sales" => 0
+    "productNumber" => "SW10000"
+    "stock" => 10
+    "availableStock" => 10
+    "available" => true
+    "deliveryTimeId" => null
+    "deliveryTime" => null
+    "restockTime" => null
+    "isCloseout" => false
+    "purchaseSteps" => 1
+    "maxPurchase" => null
+    "minPurchase" => 1
+    "purchaseUnit" => null
+    "referenceUnit" => null
+    "shippingFree" => false
+    "purchasePrices" => array:1 [▶]
+    "markAsTopseller" => false
+    "weight" => null
+    "width" => null
+    "height" => null
+    "length" => null
+    "releaseDate" => null
+    "categoryTree" => array:1 [▶]
+    "streamIds" => null
+    "optionIds" => null
+    "propertyIds" => null
+    "name" => "Testprodukt"
+    "keywords" => null
+    "description" => "Dies ist eine Beschreibung"
+    "metaDescription" => null
+    "metaTitle" => null
+    "packUnit" => null
+    "packUnitPlural" => null
+    "variantRestrictions" => null
+    "variantListingConfig" => array:5 [▶]
+    "variation" => []
+    "tax" => array:15 [▶]
+    "manufacturer" => null
+    "unit" => null
+    "prices" => []
+    "cover" => null
+    "parent" => null
+    "children" => null
+    "media" => null
+    "cmsPageId" => "7a6d253a67204037966f42b0119704d5"
+    "cmsPage" => null
+    "slotConfig" => null
+    "searchKeywords" => null
+    "translations" => null
+    "categories" => null
+    "customFieldSets" => null
+    "tags" => null
+    "properties" => null
+    "options" => null
+    "configuratorSettings" => null
+    "categoriesRo" => null
+    "coverId" => null
+    "visibilities" => null
+    "tagIds" => null
+    "categoryIds" => array:1 [▶]
+    "productReviews" => null
+    "ratingAverage" => null
+    "mainCategories" => null
+    "seoUrls" => null
+    "orderLineItems" => null
+    "crossSellings" => null
+    "crossSellingAssignedProducts" => null
+    "featureSetId" => "0197349d381c7368a1cde50e6dcf8caa"
+    "featureSet" => null
+    "customFieldSetSelectionActive" => null
+    "customSearchKeywords" => null
+    "wishlists" => null
+    "canonicalProductId" => null
+    "canonicalProduct" => null
+    "streams" => null
+    "downloads" => null
+    "states" => array:1 [▶]
+    "customFields" => null
+    "id" => "0197350a258d7dfa9629b219fc416fed"
+    "apiAlias" => "product"
+  ]
+]
 
-| Spalte            | Typ               | Beschreibung                                                                 |
-|-------------------|-------------------|------------------------------------------------------------------------------|
-| `repo`            | VARCHAR(12)       | Repository-ID, verweist auf `oai_repo`                                       |
-| `history`         | TINYINT UNSIGNED  | Historienflag (0 = aktiv, 1 = archiviert)                                   |
-| `serial`          | INT UNSIGNED      | Fortlaufende Nummer zur Identifikation pro Repository                       |
-| `identifier`      | VARCHAR(200)      | Eindeutiger OAI-Identifier                                                   |
-| `metadataPrefix`  | VARCHAR(20)       | Metadatenformat (z. B. `oai_dc`)                                             |
-| `datestamp`       | DATETIME          | Änderungszeitpunkt                                                          |
-| `deleted`         | TINYINT           | Status (0 = aktiv, 1 = gelöscht)                                            |
-| `metadata`        | TEXT              | XML-Daten des Metadatensatzes                                               |
-| `created`         | DATETIME          | Erstellzeitpunkt                                                            |
-| `updated`         | TIMESTAMP         | Letzte Änderung (automatisch aktualisiert)                                  |
 
-**Indizes und Schlüssel:**
-- `PRIMARY KEY (repo, history, serial, identifier, metadataPrefix)`
-- `INDEX idx_repo_item_meta (repo, identifier, metadataPrefix)`
-- `FOREIGN KEY` zu `oai_repo(id)`
-- `FOREIGN KEY` zu `oai_meta(repo, metadataPrefix)`
+```
 
----
-
-### 📄 `oai_item_meta_about`
-
-**Beschreibung:**  
-Tabelle zur Ablage von `<about>`-Informationen für einen Metadatensatz. Jeder Metadatensatz kann mehrere About-Blöcke enthalten, z. B. Rechte, Provenienz, Validierung etc.
-
-| Spalte            | Typ               | Beschreibung                                                                 |
-|-------------------|-------------------|------------------------------------------------------------------------------|
-| `repo`            | VARCHAR(12)       | Repository-ID                                                                |
-| `history`         | TINYINT UNSIGNED  | Historienflag (0 = aktiv, 1 = archiviert)                                   |
-| `serial`          | INT UNSIGNED      | Serial des zugehörigen Metadatensatzes                                      |
-| `identifier`      | VARCHAR(200)      | Identifier des Metadatensatzes                                              |
-| `metadataPrefix`  | VARCHAR(20)       | Metadatenformat                                                              |
-| `datestamp`       | DATETIME          | Änderungszeitpunkt                                                          |
-| `about`           | TEXT              | XML-Daten im About-Bereich                                                  |
-| `rank`            | INT               | Reihenfolgeindex bei mehreren About-Blöcken                                 |
-| `created`         | DATETIME          | Erstellzeitpunkt                                                            |
-| `updated`         | TIMESTAMP         | Letzte Änderung                                                              |
-
-**Indizes und Schlüssel:**
-- `PRIMARY KEY (repo, history, serial, identifier, metadataPrefix, rank)`
-- `INDEX idx_repo_item_meta_about (repo, identifier, metadataPrefix, rank)`
-- `FOREIGN KEY` zu `oai_repo(id)`
-- `FOREIGN KEY` zu `oai_meta(repo, metadataPrefix)`
-- `FOREIGN KEY` zu `oai_item_meta(repo, identifier, metadataPrefix)`
-
-**Trigger:**
-- `trigger_oai_about_soft_delete`: Wird `oai_item_meta.history` auf `1` gesetzt, werden automatisch alle zugehörigen About-Einträge als archiviert markiert.
-
----
-
-### 📄 `oai_item_set`
-
-**Beschreibung:**  
-Zuweisungstabelle zur Verbindung von OAI-Items mit Sets. Unterstützt mehrere Sets pro Metadatensatz und enthält auch Set-Metadaten.
-
-| Spalte            | Typ               | Beschreibung                                                                 |
-|-------------------|-------------------|------------------------------------------------------------------------------|
-| `repo`            | VARCHAR(12)       | Repository-ID                                                                |
-| `history`         | TINYINT UNSIGNED  | Historienflag                                                                |
-| `serial`          | INT UNSIGNED      | Serial des Metadatensatzes                                                  |
-| `identifier`      | VARCHAR(200)      | Identifier                                                                   |
-| `metadataPrefix`  | VARCHAR(20)       | Metadatenformat                                                              |
-| `setSpec`         | VARCHAR(60)       | Set-Kennung (z. B. `libellen`)                                               |
-| `confirmed`       | INT UNSIGNED      | Kennzeichen zur Freigabe (optional)                                          |
-| `created`         | DATETIME          | Erstellzeitpunkt                                                            |
-| `updated`         | TIMESTAMP         | Letzte Änderung                                                              |
-
-**Indizes und Schlüssel:**
-- `PRIMARY KEY (repo, history, serial, identifier, metadataPrefix, setSpec)`
-- `FOREIGN KEY` zu `oai_repo(id)`
-- `FOREIGN KEY` zu `oai_meta(repo, metadataPrefix)`
-- `FOREIGN KEY` zu `oai_set(repo, setSpec)`
-- `FOREIGN KEY` zu `oai_item_meta(repo, identifier, metadataPrefix)`
-
----
-
-### 🔗 Beziehungen
-
-- `oai_item_meta` → 1:n → `oai_item_meta_about`
-- `oai_item_meta` → 1:n → `oai_item_set`
-- Soft-Deletion von `about`-Daten über Trigger bei Archivierung von `meta`
 
 
 ## 📄 License
