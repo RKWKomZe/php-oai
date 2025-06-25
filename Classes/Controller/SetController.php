@@ -158,7 +158,6 @@ class SetController extends AbstractController
 
     public function update(): void
     {
-
         $oaiSet = GenericModelMapper::map($_POST, OaiSet::class);
         $oaiSetDescription = GenericModelMapper::map($_POST, OaiSetDescription::class);
 

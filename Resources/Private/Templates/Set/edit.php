@@ -4,28 +4,23 @@
 
 <div class="col-md-6">
     <form method="post" action="?controller=set&action=update" id="setForm" novalidate>
-        <input type="hidden" name="originalRepo" value="<?= htmlspecialchars($oaiSet->getRepo()) ?>">
-        <input type="hidden" name="originalSetSpec" value="<?= htmlspecialchars($oaiSet->getSetSpec()) ?>">
+        <input type="hidden" name="repo" value="<?= htmlspecialchars($oaiSet->getRepo()) ?>">
+        <input type="hidden" name="setSpec" value="<?= htmlspecialchars($oaiSet->getSetSpec()) ?>">
 
         <div class="mb-3">
-            <label for="repo" class="form-label">Repository</label>
-            <select class="form-select" name="repo" id="repo" required>
-                <option value="" disabled hidden>Please select...</option>
-                <?php foreach ($repoList as $repoItem): ?>
-                    <option value="<?= htmlspecialchars($repoItem->getId()) ?>"
-                        <?= ($repoItem->getId() === $oaiSet->getRepo()) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($repoItem->getRepositoryName() . ' (' . $repoItem->getId() . ')') ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+            <label for="repo_display" class="form-label">Repository</label>
+            <input type="text" readonly class="form-control-plaintext text-muted" id="repo_display"
+                   value="<?= htmlspecialchars($oaiSet->getRepo()) ?>"
+                   data-bs-toggle="tooltip"
+                   title="The repository cannot be changed after creation. This value is used as part of the primary key.">
         </div>
 
         <div class="mb-3">
-            <label for="setSpec" class="form-label">Set Spec</label>
-            <input type="text" class="form-control" name="setSpec" id="setSpec" required
-                   placeholder="e.g. pubs or data" pattern="^[a-zA-Z0-9._-]+$"
-                   title="Only letters, numbers, dot, underscore and hyphen are allowed"
-                   value="<?= htmlspecialchars($oaiSet->getSetSpec()) ?>">
+            <label for="setSpec_display" class="form-label">Set Spec</label>
+            <input type="text" readonly class="form-control-plaintext text-muted" id="setSpec_display"
+                   value="<?= htmlspecialchars($oaiSet->getSetSpec()) ?>"
+                   data-bs-toggle="tooltip"
+                   title="The Set Spec is a stable identifier and must not be changed. If a new set is needed, please create one.">
         </div>
 
         <div class="mb-3">
@@ -68,4 +63,5 @@
             }
         }
     });
+
 </script>

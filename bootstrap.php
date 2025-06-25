@@ -6,6 +6,7 @@
  * All relevant classes are located in /lib and are loaded here explicitly.
  */
 
+require_once __DIR__ . '/lib/oai-pmh/php/oai-pmh/Oai.php';
 require_once __DIR__ . '/lib/oai-pmh/php/oai-pmh/Oai_Backend.php';
 require_once __DIR__ . '/lib/oai-pmh/php/oai-pmh/Oai_Connection.php';
 require_once __DIR__ . '/lib/oai-pmh/php/oai-pmh/Oai_Utils.php';

@@ -16,10 +16,12 @@ $config = ConfigLoader::load();
 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="/Public/Scripts/main.js"></script>
+        <!--
         <script type="module">
             import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
             mermaid.initialize({ startOnLoad: true });
         </script>
+        -->
     </head>
 
 <body>

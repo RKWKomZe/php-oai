@@ -24,14 +24,71 @@ use RKW\OaiConnector\Utility\MenuHelper;
                 <li class="nav-item">
                     <?php echo MenuHelper::renderMenuLink('Item', 'list', 'Datensätze'); ?>
                 </li>
-                <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink('Repo', 'list', 'OAI Repositories'); ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="oaiDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        OAI Data
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="oaiDropdown">
+                        <li>
+                            <?php echo MenuHelper::renderMenuLink(
+                                'repo',
+                                'list',
+                                'OAI Repositories',
+                                [],
+                                [],
+                                'dropdown-item'
+                            ); ?>
+                        </li>
+                        <li>
+                            <?php echo MenuHelper::renderMenuLink(
+                                'meta',
+                                'list',
+                                'OAI Meta',
+                                [],
+                                [],
+                                'dropdown-item'
+                            ); ?>
+                        </li>
+                        <li>
+                            <?php echo MenuHelper::renderMenuLink(
+                                'set',
+                                'list',
+                                'OAI Set',
+                                [],
+                                [],
+                                'dropdown-item'
+                            ); ?>
+                        </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink('Meta', 'list', 'OAI Meta'); ?>
-                </li>
-                <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink('Set', 'list', 'OAI Set'); ?>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="toolDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        Tools
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="toolDropdown">
+                        <li>
+                            <?php echo MenuHelper::renderMenuLink(
+                                'tool',
+                                'query',
+                                'Endpoint Queries',
+                                [],
+                                [],
+                                'dropdown-item'
+                            ); ?>
+                        </li>
+                        <li>
+                            <?php echo MenuHelper::renderMenuLink(
+                                'tool',
+                                'fullImport',
+                                'Full Import',
+                                [],
+                                [],
+                                'dropdown-item'
+                            ); ?>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </div>

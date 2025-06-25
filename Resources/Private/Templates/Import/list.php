@@ -18,6 +18,23 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
 
 <h1 class="mb-4">Shopware Produktliste</h1>
 
+<div class="alert alert-info" role="alert">
+    <strong>Note:</strong> The product list below is retrieved directly from the Shopware API.
+    You can filter live product data by date and number of records per page.
+
+    <a class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="collapse" href="#importHelpDetails" role="button" aria-expanded="false" aria-controls="importHelpDetails">
+        Show more...
+    </a>
+
+    <div class="collapse mt-2" id="importHelpDetails">
+        <p class="mb-1">
+            The selected repository is required and allows the system to indicate whether a given product has already been imported into it.
+        </p>
+        <p class="mb-0">
+            To import products into the OAI system, use the action buttons shown next to each record.
+        </p>
+    </div>
+</div>
 
 <form method="get" class="row g-3 mb-4">
     <input type="hidden" name="controller" value="Import">

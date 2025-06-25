@@ -139,7 +139,7 @@ XML;
 
         // @toDo: We need a real handling here...
 
-        return ['prod'];
+        return ['default'];
         // Das set muss vorher existieren. Hier legen wir es einfach mal via "Piratenmethode" an:
 
         /*

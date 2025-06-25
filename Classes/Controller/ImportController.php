@@ -196,7 +196,7 @@ echo json_encode(['success' => false, 'message' => 'Produkt konnte nicht gefunde
 
         //$this->render('index');
 
-        Redirect::to('index', 'Index');
+        Redirect::to('fullImport', 'Tool');
     }
 
 }

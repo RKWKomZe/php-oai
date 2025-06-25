@@ -56,7 +56,6 @@ class RepoController extends AbstractController
         if (!$identifier) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Repo');
-            return;
         }
 
         $oaiRepo = $this->oaiRepoRepository
@@ -69,7 +68,6 @@ class RepoController extends AbstractController
         if (!$oaiRepo) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
             Redirect::to('list', 'Repo');
-            return;
         }
 
         $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
@@ -120,7 +118,6 @@ class RepoController extends AbstractController
         if (!$identifier) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Repo');
-            return;
         }
 
         $oaiRepo = $this->oaiRepoRepository->withModels()->findById($identifier);

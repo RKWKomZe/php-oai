@@ -8,7 +8,9 @@ class MenuHelper
         ?string $controller,
         ?string $action,
         string $label,
-        array $params = []
+        array $params = [],
+        array $attributes = [],
+        string $linkClass = 'nav-link' // can be changed to 'dropdown-item' etc.
     ): string {
         $currentController = $_GET['controller'] ?? null;
         $currentAction = $_GET['action'] ?? null;
@@ -22,7 +24,14 @@ class MenuHelper
         // Determine if this is the active link (Controller match is sufficient)
         $isActive = $controller !== null && $controller === $currentController;
 
-        $class = 'nav-link' . ($isActive ? ' active text-orange' : '');
+        // Compose link class
+        $classList = [$linkClass];
+        if ($isActive) {
+            $classList[] = 'active';
+            if ($linkClass === 'nav-link') {
+                $classList[] = 'text-orange';
+            }
+        }
 
         // Build href
         $query = [];
@@ -41,10 +50,17 @@ class MenuHelper
             $href .= '?' . http_build_query($query);
         }
 
+        // Convert attributes array into HTML string
+        $attrHtml = '';
+        foreach ($attributes as $key => $value) {
+            $attrHtml .= ' ' . htmlspecialchars($key) . '="' . htmlspecialchars($value) . '"';
+        }
+
         return sprintf(
-            '<li class="nav-item"><a class="%s" href="%s">%s</a></li>',
-            $class,
+            '<li class="nav-item"><a class="%s" href="%s"%s>%s</a></li>',
+            implode(' ', $classList),
             htmlspecialchars($href, ENT_QUOTES),
+            $attrHtml,
             htmlspecialchars($label, ENT_QUOTES)
         );
     }

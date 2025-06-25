@@ -13,7 +13,18 @@ document.addEventListener('DOMContentLoaded', function () {
 });
  */
 
+
+
 document.addEventListener('DOMContentLoaded', function () {
+
+    // Enable Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+
+    // FlashMessage animation stuff
     const alerts = document.querySelectorAll('.alert-dismissible');
 
     alerts.forEach(function (alert) {
@@ -24,9 +35,9 @@ document.addEventListener('DOMContentLoaded', function () {
             bsAlert.close();
         }, timeout);
     });
-});
 
-document.addEventListener('DOMContentLoaded', () => {
+
+    // AJAX import
     document.querySelectorAll('.import-button').forEach(button => {
         button.addEventListener('click', async (event) => {
             event.preventDefault();
@@ -81,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
 
 function showSuccess(message) {
     alert(message); // oder schöner mit Modal

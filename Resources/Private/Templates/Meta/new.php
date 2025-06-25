@@ -11,52 +11,60 @@
     </div>
 </div>
 
-<div class="col-md-6">
-    <form method="post" action="?controller=meta&action=create" id="metaForm" novalidate>
-        <div class="mb-3">
-            <label for="repo" class="form-label">Repository</label>
-            <select class="form-select" name="repo" id="repo" required>
-                <option value="" disabled selected hidden>Bitte wählen...</option>
-                <?php foreach ($repoList as $repoItem): ?>
-                    <option value="<?= htmlspecialchars($repoItem->getId()) ?>">
-                        <?= htmlspecialchars($repoItem->getRepositoryName() . ' (' . $repoItem->getId() . ')') ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+<div class="row">
+    <div class="col-md-6">
+        <form method="post" action="?controller=meta&action=create" id="metaForm" novalidate>
+            <div class="mb-3">
+                <label for="repo" class="form-label">Repository</label>
+                <select class="form-select" name="repo" id="repo" required>
+                    <option value="" disabled selected hidden>Bitte wählen...</option>
+                    <?php foreach ($repoList as $repoItem): ?>
+                        <option value="<?= htmlspecialchars($repoItem->getId()) ?>">
+                            <?= htmlspecialchars($repoItem->getRepositoryName() . ' (' . $repoItem->getId() . ')') ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-        <div class="mb-3">
-            <label for="metadataPrefix" class="form-label">Metadaten-Prefix</label>
-            <input type="text" class="form-control" name="metadataPrefix" id="metadataPrefix" required
-                   placeholder="z. B. oai_dc oder shop_xml" pattern="^[a-zA-Z0-9._-]+$"
-                   title="Nur Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich erlaubt">
-        </div>
+            <div class="mb-3">
+                <label for="metadataPrefix" class="form-label">Metadaten-Prefix</label>
+                <input type="text" class="form-control" name="metadataPrefix" id="metadataPrefix" required
+                       placeholder="z. B. oai_dc oder shop_xml" pattern="^[a-zA-Z0-9._-]+$"
+                       title="Nur Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich erlaubt">
+            </div>
 
-        <div class="mb-3">
-            <label for="schema" class="form-label">Schema-URL</label>
-            <input type="url" class="form-control" name="schema" id="schema" required
-                   placeholder="https://www.openarchives.org/OAI/2.0/oai_dc.xsd"
-                   title="Bitte eine gültige URL angeben">
-        </div>
+            <div class="mb-3">
+                <label for="schema" class="form-label">Schema-URL</label>
+                <input type="url" class="form-control" name="schema" id="schema" required
+                       placeholder="https://www.openarchives.org/OAI/2.0/oai_dc.xsd"
+                       title="Bitte eine gültige URL angeben">
+            </div>
 
-        <div class="mb-3">
-            <label for="metadataNamespace" class="form-label">XML-Namespace</label>
-            <input type="url" class="form-control" name="metadataNamespace" id="metadataNamespace" required
-                   placeholder="https://www.openarchives.org/OAI/2.0/oai_dc/"
-                   title="Bitte eine gültige URL angeben">
-        </div>
+            <div class="mb-3">
+                <label for="metadataNamespace" class="form-label">XML-Namespace</label>
+                <input type="url" class="form-control" name="metadataNamespace" id="metadataNamespace" required
+                       placeholder="https://www.openarchives.org/OAI/2.0/oai_dc/"
+                       title="Bitte eine gültige URL angeben">
+            </div>
 
-        <div class="mb-3">
-            <label for="comment" class="form-label">Kommentar (optional)</label>
-            <textarea class="form-control" name="comment" id="comment" rows="2"
-                      placeholder="z. B. Pflichteintrag für Dublin Core laut OAI-PMH-Spezifikation"></textarea>
-        </div>
+            <div class="mb-3">
+                <label for="comment" class="form-label">Kommentar (optional)</label>
+                <textarea class="form-control" name="comment" id="comment" rows="2"
+                          placeholder="z. B. Pflichteintrag für Dublin Core laut OAI-PMH-Spezifikation"></textarea>
+            </div>
 
-        <button type="submit" class="btn btn-primary">Speichern</button>
-        <a class="btn btn-secondary" href="?controller=meta&action=list">Abbrechen</a>
-    </form>
+            <button type="submit" class="btn btn-primary">Speichern</button>
+            <a class="btn btn-secondary" href="?controller=meta&action=list">Abbrechen</a>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <div class="alert alert-info" role="alert">
+            <strong>Information:</strong> You can prefill the metadata field using either <em>Dublin Core</em> or <em>MARCXML</em> templates.
+            Dublin Core is a simple, generic metadata format suitable for most use cases. MARCXML is a richer format preferred by national libraries such as the German National Library (DNB).
+            Please choose the format that best matches your data and intended harvesting partner.
+        </div>
+    </div>
 </div>
-
 
 <script>
     function fillDublinCore() {

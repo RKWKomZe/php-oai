@@ -42,6 +42,8 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
 
     <h1>Welcome to the OAI Connector</h1>
 
+    <p class="lead">This interface allows you to import and manage product records from Shopware via OAI-PMH.</p>
+
     <?php if (!empty($factOfTheDay)) : ?>
         <div class="alert alert-info d-flex align-items-start p-3 mt-4 border-info rounded shadow-sm small" role="alert">
             <i class="bi bi-lightbulb-fill me-3 fs-4 text-primary" aria-hidden="true"></i>
@@ -52,12 +54,13 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
         </div>
     <?php endif; ?>
 
-    <p class="lead">This interface allows you to import and manage product records from Shopware via OAI-PMH.</p>
-
+    <!--
     <a href="/index.php?controller=Import&action=run" class="btn btn-primary">Run Shopware Import</a>
+    -->
 
 </div>
 
+Hier noch Datenbank informationen anzeigen. Vorallem die Update-Liste wäre interesssant
 
 <!--
 
