@@ -62,6 +62,10 @@ class ImportController extends AbstractController
 
         $repoList = $this->repoRepository->withModels()->findAll();
 
+        if (!count($repoList)) {
+            FlashMessage::add('No repositories found. Import not possible. Please create an OAI-Repo first.', FlashMessage::TYPE_DANGER);
+        }
+
         $activeRepoId = $_GET['repo']
             ?? ($array[0]['id'] ?? null)
             ?? $this->settings['oai']['defaultRepoId'];

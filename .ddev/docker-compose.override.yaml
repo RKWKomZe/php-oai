@@ -4,8 +4,8 @@ services:
   web:
     networks:
       - default
-      - sharednet
+      - rkw-sharednet
 
 networks:
-  sharednet:
+  rkw-sharednet:
     external: true

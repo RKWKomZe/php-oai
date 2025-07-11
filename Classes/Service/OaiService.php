@@ -6,16 +6,16 @@ use RKW\OaiConnector\Utility\ConfigLoader;
 use Symfony\Component\VarDumper\VarDumper;
 
 
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Backend.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Connection.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Const.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Date.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Err.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Exception.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Logger.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Utils.php';
-require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Xml_Utils.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Backend.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Connection.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Const.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Date.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Err.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Exception.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Logger.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Oai_Utils.php';
+#require_once __DIR__ . '/../../lib/oai-pmh/php/oai-pmh/Xml_Utils.php';
 
 class OaiService
 {

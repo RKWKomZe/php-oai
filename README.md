@@ -2,9 +2,61 @@
 
 This project connects (amon others) a Shopware system to an OAI-PMH server. It is a deliberately minimal PHP project without a full framework but with a modern structure and Composer support.
 
-## Setup
-In project root folder: bash Scripts/setup.sh
 
+## Setup
+Create the project folder:
+```
+mkdir rkw-oaipmh && cd rkw-oaipmh
+```
+Clone project:
+```
+git clone git@github.com:RKWKomZe/php-oai.git .
+
+ddev config (with everything default)
+
+ddev get ddev/ddev-phpmyadmin
+
+ddev start
+```
+Install:
+```
+ddev exec composer install
+```
+Add the local .env
+```
+APP_ENV=development
+APP_DEBUG=true
+APP_URL=https://rkw-oaipmh.ddev.site
+
+DB_HOST=db
+DB_NAME=db
+DB_USER=db
+DB_PASS=db
+DB_PORT=3306
+DB_CHARSET='utf8mb4'
+
+SHOPWARE_BASE_URL=https://ddev-rkw-shopware-web
+SHOPWARE_CLIENT_ID=SWIABHK5R0FNOWVPQK1FTMFQDW
+SHOPWARE_CLIENT_SECRET=STJaY1pCSkVaQ3JqUU43dmJ4SHpmZVVrN1pzNWJvSWlhazNuSFY
+```
+### Add the database
+Add database:
+```
+Execute from project root:
+bash Scripts/setup.sh
+```
+
+Enjoy:
+
+https://rkw-oaipmh.ddev.site/
+
+## First steps
+* Create your first repo (https://rkw-oaipmh.ddev.site/index.php?controller=repo&action=new)
+  * ID "shopware"
+  * Base URL: Your domain with following path including your repository name: https://rkw-oaipmh.ddev.site/index.php?controller=endpoint&action=handle&verb=Identify&repo=shopware
+
+* Create your first meta (https://rkw-oaipmh.ddev.site/index.php?controller=meta&action=new)
+  * Choose your newly created repo and use the prefill function on the top right ("MARCXML übernehmen")
 
 ## 🔧 Project Structure
 
@@ -14,6 +66,8 @@ In project root folder: bash Scripts/setup.sh
 /config/config.php → Configuration (environment, Shopware, DB)
 /logs              → Runtime logs (not versioned)
 /vendor            → Composer dependencies
+/packages/oai-pmh/
+└── composer.json  ← includes: "name": "cbisiere/oai-pmh"
 ```
 
 ## ⚙️ Configuration
@@ -235,6 +289,71 @@ $entries = $repo->findBy(['active' => 1], ['created_at' => 'DESC'], $pagination)
 ```
 
 
+## OPTIONAL: Create your local shopware project for test-purposes
+### Create a new network to wire both projects:
+```
+docker network create rkw-sharednet
+```
+Check it:
+```
+docker network ls
+```
+Add this file to both projects inside **.ddev**:
+```
+docker-compose.override.yaml
+
+version: '3.6'
+
+services:
+  web:
+    networks:
+      - default
+      - rkw-sharednet
+
+networks:
+  rkw-sharednet:
+    external: true
+
+```
+If project already exists: Restart DDEV
+```
+ddev restart
+```
+### Create your local shopware test environment
+Use quickstart from https://ddev.readthedocs.io/en/stable/users/quickstart/#shopware
+```
+mkdir rkw-shopware && cd rkw-shopware
+ddev config --project-type=shopware6 --docroot=public
+
+**ADD docker-compose.override.yaml from above**
+
+ddev start
+ddev composer create-project shopware/production
+# If it asks `Do you want to include Docker configuration from recipes?`
+# answer `x`, as we're using DDEV for this rather than its recipes.
+ddev exec console system:install --basic-setup
+ddev launch /admin
+# Default username and password are `admin` and `shopware`
+```
+After login use configuration popup for your quickstart:
+- "Use demo data"
+- "Storefront"
+- "Use local email agent"
+- Skip PayPal stuff
+- Extensions (optional)
+- Skip "Shopware Account"
+- Skip "Shopware Store"
+- Finish
+
+### Create API integration in shopware
+* Login to shopware
+* Go to **Settings** -> **Integrations** (System) 
+* Click on **Add integration** button
+* Form values:
+  * Name: "RKW OAI Connector"
+  * Administration ON (needed for single queries!)
+  * SAVE THE SHOWN KEYS (!) and put them into the .env file of the **rkw-oaipmh** project
+  * "Save integration" (button)
 
 ## 📄 License
 

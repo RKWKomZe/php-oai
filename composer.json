@@ -1,17 +1,30 @@
 {
   "name": "rkw/oai-rkw",
   "description": "Integration von Shopware in cbisiere/oai-pmh Server",
-  "autoload": {
-    "psr-4": {
-      "RKW\\OaiConnector\\": "Classes/"
+  "repositories": [
+    {
+      "type": "path",
+      "url": "packages/oai-pmh",
+      "options": {
+        "symlink": false
+      }
     }
-  },
+  ],
   "require": {
+    "cbisiere/oai-pmh": "*",
     "monolog/monolog": "^3.9",
     "vlucas/phpdotenv": "^5.6",
     "guzzlehttp/guzzle": "^7.9"
   },
   "require-dev": {
     "symfony/var-dumper": "^7.3"
-  }
+  },
+  "autoload": {
+    "psr-4": {
+      "RKW\\OaiConnector\\": "Classes/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+
 }

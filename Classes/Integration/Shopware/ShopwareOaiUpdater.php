@@ -4,7 +4,7 @@ namespace RKW\OaiConnector\Integration\Shopware;
 
 use Symfony\Component\VarDumper\VarDumper;
 
-require_once __DIR__ . '/../../../bootstrap.php';
+#require_once __DIR__ . '/../../../bootstrap.php';
 
 class ShopwareOaiUpdater extends \Oai_Updater
 {
