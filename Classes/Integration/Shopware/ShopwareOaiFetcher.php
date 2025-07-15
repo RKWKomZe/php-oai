@@ -6,7 +6,6 @@ namespace RKW\OaiConnector\Integration\Shopware;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use RKW\OaiConnector\Utility\ConfigLoader;
-use Symfony\Component\VarDumper\VarDumper;
 
 class ShopwareOaiFetcher
 {
@@ -112,13 +111,15 @@ class ShopwareOaiFetcher
      */
     protected function transformProduct(array $product): array
     {
-        $attributes = $product['attributes'] ?? [];
+        $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
+        $description = $product['translated']['description'] ?? '';
+        $createdAt = $product['createdAt'] ?? date('Y-m-d');
 
         return [
             'identifier' => $product['id'],
-            'datestamp' => $attributes['createdAt'] ?? date('Y-m-d'),
-            'title' => $attributes['translated']['name'] ?? $attributes['name'] ?? 'Kein Titel',
-            'description' => $attributes['translated']['description'] ?? '',
+            'datestamp' => $createdAt,
+            'title' => $title,
+            'description' => $description,
             'url' => $this->baseUrl . "/detail/{$product['id']}"
         ];
     }
@@ -159,7 +160,8 @@ class ShopwareOaiFetcher
     protected function fetchProducts(string $accessToken, array $filterOptions): array
     {
 
-        $url = $this->baseUrl . '/api/product';
+        #$url = $this->baseUrl . '/api/product';
+        $url = $this->baseUrl . '/api/search/product';
 
         $client = new Client([
             'base_uri' => $url,
@@ -172,13 +174,22 @@ class ShopwareOaiFetcher
             isset($filterOptions['fromDate'])
             && isset($filterOptions['untilDate'])
         ) {
-            $filters[] = [
-                'type' => 'range',
-                'field' => 'createdAt',
-                'parameters' => [
-                    'gte' => $filterOptions['fromDate']->format('Y-m-d\TH:i:s.000\Z'),
-                    'lte' => $filterOptions['untilDate']->format('Y-m-d\TH:i:s.999\Z'),
+            $filters = [
+                // show only main products (show no product variations without name etc)
+                [
+                    'type' => 'equals',
+                    'field' => 'parentId',
+                    'value' => null
                 ],
+                // Filter: order by creation date
+                [
+                    'type' => 'range',
+                    'field' => 'createdAt',
+                    'parameters' => [
+                        'gte' => $filterOptions['fromDate']->format('Y-m-d\TH:i:s.000\Z'),
+                        'lte' => $filterOptions['untilDate']->format('Y-m-d\TH:i:s.999\Z'),
+                    ],
+                ]
             ];
         }
 

@@ -7,7 +7,6 @@ use PDOException;
 use RKW\OaiConnector\Mapper\GenericModelMapper;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\Pagination;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * AbstractRepository

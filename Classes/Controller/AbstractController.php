@@ -5,7 +5,6 @@ namespace RKW\OaiConnector\Controller;
 
 use PDO;
 use RKW\OaiConnector\Utility\ConfigLoader;
-use Symfony\Component\VarDumper\VarDumper;
 
 abstract class AbstractController
 {

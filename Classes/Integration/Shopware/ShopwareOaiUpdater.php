@@ -2,10 +2,6 @@
 
 namespace RKW\OaiConnector\Integration\Shopware;
 
-use Symfony\Component\VarDumper\VarDumper;
-
-#require_once __DIR__ . '/../../../bootstrap.php';
-
 class ShopwareOaiUpdater extends \Oai_Updater
 {
 
@@ -171,7 +167,11 @@ XML;
 
     public function metadataPrefixArray()
     {
+        // @toDo: dynamische Rückgabe
+
+
         return ['oai_dc'];
+        #return ['marcxml'];
     }
 
     public function aboutMetadata($f): array
@@ -200,4 +200,7 @@ XML;
         }
         return null;
     }
+
+
+
 }

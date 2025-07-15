@@ -10,7 +10,6 @@ use RKW\OaiConnector\Repository\OaiMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
 
 class MetaController extends AbstractController
 {

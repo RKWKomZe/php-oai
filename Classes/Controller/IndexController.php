@@ -6,10 +6,10 @@ use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\ConfigLoader;
+use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Pagination;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
 
 class IndexController extends AbstractController
 {
@@ -46,7 +46,20 @@ class IndexController extends AbstractController
         // So das man Repo name + speziellen Key / Token übergeben muss, damit Repo X abgefragt werden kann
 
 
-        $this->render();
+        $pdo = DbConnection::get();
+
+        $stmt = $pdo->query('
+        SELECT *
+        FROM oai_update_log
+        ORDER BY id DESC
+        LIMIT 20
+    ');
+
+        $logs = $stmt->fetchAll();
+
+        $this->render('index', [
+            'logs' => $logs,
+        ]);
     }
 
     /*

@@ -60,7 +60,37 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
 
 </div>
 
-Hier noch Datenbank informationen anzeigen. Vorallem die Update-Liste wäre interesssant
+<h3 class="mb-4">OAI Update Log</h3>
+
+<table class="table table-sm table-bordered table-striped">
+    <thead class="table-light">
+    <tr>
+        <th>#</th>
+        <th>Repository</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Status</th>
+        <th>Inserted</th>
+        <th>Deleted</th>
+        <th>Error</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($logs as $log): ?>
+        <tr class="<?= $log['error'] ? 'table-danger' : '' ?>">
+            <td><?= (int)$log['id'] ?></td>
+            <td><?= htmlspecialchars($log['repo']) ?></td>
+            <td><?= htmlspecialchars($log['date_start'] ?? '-') ?></td>
+            <td><?= htmlspecialchars($log['date_end'] ?? '-') ?></td>
+            <td><?= htmlspecialchars($log['status'] ?? '-') ?></td>
+            <td><?= (int)$log['meta_inserted'] ?></td>
+            <td><?= (int)$log['meta_deleted'] ?></td>
+            <td><?= $log['error'] ? '❌' : '✔️' ?></td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+
 
 <!--
 

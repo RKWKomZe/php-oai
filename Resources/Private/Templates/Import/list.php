@@ -173,7 +173,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                     <?php endif; ?>
 
 
-                    <h5 class="card-title"><?= htmlspecialchars($product['name']) ?></h5>
+                    <h5 class="card-title"><?= htmlspecialchars((string)$product['name']) ?></h5>
                     <p class="card-text mb-1"><strong>Artikelnummer:</strong> <?= htmlspecialchars($product['productNumber']) ?></p>
                     <p class="card-text mb-1"><strong>Hersteller:</strong> <?= htmlspecialchars($product['manufacturer']['name'] ?? '-') ?></p>
                     <p class="card-text mb-1"><strong>Beschreibung:</strong> <?= htmlspecialchars($product['description'] ?? '-') ?></p>

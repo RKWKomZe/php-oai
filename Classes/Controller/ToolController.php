@@ -5,7 +5,6 @@ namespace RKW\OaiConnector\Controller;
 
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Repository\OaiSetRepository;
-use Symfony\Component\VarDumper\VarDumper;
 
 class ToolController extends AbstractController
 {

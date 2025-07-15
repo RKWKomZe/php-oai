@@ -11,7 +11,6 @@ use RKW\OaiConnector\Repository\OaiSetDescriptionRepository;
 use RKW\OaiConnector\Repository\OaiSetRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
 
 class SetController extends AbstractController
 {

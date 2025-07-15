@@ -2,7 +2,6 @@
 
 namespace RKW\OaiConnector\Utility;
 
-use Symfony\Component\VarDumper\VarDumper;
 
 class Pagination
 {

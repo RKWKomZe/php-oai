@@ -5,7 +5,6 @@ namespace RKW\OaiConnector\Repository;
 use RKW\OaiConnector\Model\OaiItemMeta;
 use RKW\OaiConnector\Utility\Pagination;
 use PDO;
-use Symfony\Component\VarDumper\VarDumper;
 
 class OaiItemMetaRepository extends AbstractRepository
 {

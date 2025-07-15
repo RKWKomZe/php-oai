@@ -9,9 +9,9 @@ use RKW\OaiConnector\Integration\Shopware\ShopwareOaiUpdater;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\ConfigLoader;
+use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
 
 class ImportController extends AbstractController
 {
@@ -130,7 +130,33 @@ class ImportController extends AbstractController
             [$records]
         );
 
+        // Problem: We can't override the function "run" because of used methods with "private"-declaration
+        // But we want to return error message if something went wrong
+        // Workaround: Check the update-log-table before and after
+        $pdo = DbConnection::get();
+        $lastLogId = (int) $pdo->query('SELECT MAX(id) FROM oai_update_log')->fetchColumn();
+
+        // do the update run
         $updater->run();
+
+        // check for errors
+        $stmt = $pdo->prepare('
+            SELECT * FROM oai_update_log
+            WHERE id > :lastId
+            ORDER BY id DESC
+            LIMIT 1
+        ');
+        $stmt->execute(['lastId' => $lastLogId]);
+        $logEntry = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($logEntry && $logEntry['error']) {
+            $errorMessage = $logEntry['errmsg']; // enthält die Exception-Message
+            // nun behandeln oder anzeigen
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $errorMessage]);
+            exit;
+        }
 
         if ($isAjax) {
             header('Content-Type: application/json');

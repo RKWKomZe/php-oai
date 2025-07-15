@@ -1,9 +1,0 @@
-{
-  "name": "cbisiere/oai-pmh",
-  "description": "Simple OAI-PMH repository implementation",
-  "type": "library",
-  "autoload": {
-    "classmap": ["."]
-  },
-  "version": "dev-main"
-}
