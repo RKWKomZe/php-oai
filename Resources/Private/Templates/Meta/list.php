@@ -1,7 +1,7 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">OAI Metadatenformate</h1>
-    <a class="btn btn-secondary" href="?controller=meta&action=new">Neues Metadatenformat anlegen</a>
+    <h1 class="mb-0">OAI metadata formats</h1>
+    <a class="btn btn-secondary" href="?controller=meta&action=new">Create new metadata format</a>
 </div>
 
 <div class="alert alert-info">
@@ -13,7 +13,10 @@
 
 <?php use RKW\OaiConnector\Utility\LinkHelper;
 
-if (!empty($metaList)) : ?>
+if (empty($metaList)) : ?>
+    <div class="alert alert-info">No metadata formats found.</div>
+<?php else : ?>
+
     <table class="table table-striped table-hover">
         <thead>
         <tr>
@@ -21,8 +24,8 @@ if (!empty($metaList)) : ?>
             <th>Prefix</th>
             <th>Schema</th>
             <th>Namespace</th>
-            <th>Letzte Änderung</th>
-            <th>Aktionen</th>
+            <th>Last change</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody>
@@ -47,7 +50,7 @@ if (!empty($metaList)) : ?>
                         'Meta',
                         'edit',
                         ['prefix' => $record->getMetadataPrefix(), 'repo' => $record->getRepo()],
-                        'Bearbeiten',
+                        'Edit',
                         ['class' => 'btn btn-sm btn-secondary']);
                     ?>
                     <?php
@@ -55,7 +58,7 @@ if (!empty($metaList)) : ?>
                         'Meta',
                         'delete',
                         ['prefix' => $record->getMetadataPrefix(), 'repo' => $record->getRepo()],
-                        'Löschen',
+                        'Delete',
                         [
                             'class' => 'btn btn-sm btn-danger',
                             'onclick' => 'return confirm("Are you sure you want to delete this record?")'
@@ -66,6 +69,4 @@ if (!empty($metaList)) : ?>
         <?php endforeach; ?>
         </tbody>
     </table>
-<?php else : ?>
-    <p>Keine Metadatenformate gefunden.</p>
 <?php endif; ?>

@@ -53,21 +53,21 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     </div>
 
     <div class="col-auto">
-        <label for="from" class="form-label">Von:</label>
+        <label for="from" class="form-label">From:</label>
         <input type="date" id="from" name="from"
                value="<?= htmlspecialchars($fromDate ?? '') ?>"
                class="form-control">
     </div>
 
     <div class="col-auto">
-        <label for="until" class="form-label">Bis:</label>
+        <label for="until" class="form-label">Until:</label>
         <input type="date" id="until" name="until"
                value="<?= htmlspecialchars($untilDate ?? '') ?>"
                class="form-control">
     </div>
 
     <div class="col-auto">
-        <label for="limit" class="form-label">Anzahl:</label>
+        <label for="limit" class="form-label">Items per page:</label>
         <select name="limit" id="limit" class="form-select">
             <?php foreach ([10, 25, 50, 100] as $option): ?>
                 <option value="<?= $option ?>" <?= ((int)($_GET['limit'] ?? 25) === $option) ? 'selected' : '' ?>>
@@ -83,7 +83,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
 </form>
 <div class="mb-3 small d-flex align-items-center gap-2">
     <i class="bi bi-check-circle-fill" style="color: #198754; opacity: 0.5; font-size: 1.4rem;"></i>
-    <span class="text-muted">Dieses Symbol kennzeichnet bereits importierte Produkte</span>
+    <span class="text-muted">This symbol indicates products that have already been imported</span>
 </div>
 <!-- Produktliste -->
 <?php foreach ($productList as $product): ?>
@@ -126,7 +126,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                 'id' => $product['id'],
                                 'repo' => $activeRepoId
                             ],
-                            'Freigabe',
+                            'Approve',
                             [
                                 'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button',
                                 //'onclick' => 'return confirm("Are you sure you want to import this record?")',
@@ -163,7 +163,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                     'repo' => $activeRepoId,
                                     'returnTo' => $_SERVER['REQUEST_URI']
                                 ],
-                                'Ansehen',
+                                'Show',
                                 [
                                     'class' => 'btn btn-outline-secondary btn-sm',
                                     //'target' => '_blank'

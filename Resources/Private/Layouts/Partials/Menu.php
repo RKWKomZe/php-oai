@@ -16,13 +16,13 @@ use RKW\OaiConnector\Utility\MenuHelper;
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink(null, null, 'Startseite'); ?>
+                    <?php echo MenuHelper::renderMenuLink(null, null, 'Start'); ?>
                 </li>
                 <li class="nav-item">
                     <?php echo MenuHelper::renderMenuLink('Import', 'list', 'Import'); ?>
                 </li>
                 <li class="nav-item">
-                    <?php echo MenuHelper::renderMenuLink('Item', 'list', 'Datensätze'); ?>
+                    <?php echo MenuHelper::renderMenuLink('Item', 'list', 'Records'); ?>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="oaiDropdown" role="button"

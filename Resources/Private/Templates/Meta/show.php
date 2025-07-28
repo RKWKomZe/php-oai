@@ -43,6 +43,6 @@
     </table>
 
     <a class="btn btn-secondary" href="?controller=meta&action=list">Zurück zur Übersicht</a>
-    <a class="btn btn-primary" href="?controller=meta&action=edit&repo=<?= urlencode($oaiMeta->getRepo()) ?>&metadataPrefix=<?= urlencode($oaiMeta->getMetadataPrefix()) ?>">Bearbeiten</a>
+    <a class="btn btn-primary" href="?controller=meta&action=edit&repo=<?= urlencode($oaiMeta->getRepo()) ?>&metadataPrefix=<?= urlencode($oaiMeta->getMetadataPrefix()) ?>">Edit</a>
 
 </div>

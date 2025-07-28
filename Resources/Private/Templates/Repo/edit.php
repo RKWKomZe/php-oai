@@ -2,7 +2,7 @@
 
 use RKW\OaiConnector\Utility\LinkHelper;
 
-echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&larr; Zurück zur Liste', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
 
 ?>
 

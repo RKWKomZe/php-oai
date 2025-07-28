@@ -1,12 +1,12 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Neues Metadatenformat anlegen</h1>
+    <h1>Create new metadata format</h1>
     <div class="btn-group" role="group" aria-label="Vorlagen">
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillDublinCore()" title="Formular mit Dublin Core befüllen">
-            Dublin Core übernehmen
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillDublinCore()" title="Fill form with Dublin Core">
+            Adopt Dublin Core
         </button>
-        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillMarcxml()" title="Formular mit MARCXML befüllen">
-            MARCXML übernehmen
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="fillMarcxml()" title="Fill form with MARCXML">
+            Adopt MARCXML
         </button>
     </div>
 </div>
@@ -17,7 +17,7 @@
             <div class="mb-3">
                 <label for="repo" class="form-label">Repository</label>
                 <select class="form-select" name="repo" id="repo" required>
-                    <option value="" disabled selected hidden>Bitte wählen...</option>
+                    <option value="" disabled selected hidden>-- Please choose --</option>
                     <?php foreach ($repoList as $repoItem): ?>
                         <option value="<?= htmlspecialchars($repoItem->getId()) ?>">
                             <?= htmlspecialchars($repoItem->getRepositoryName() . ' (' . $repoItem->getId() . ')') ?>
@@ -27,34 +27,37 @@
             </div>
 
             <div class="mb-3">
-                <label for="metadataPrefix" class="form-label">Metadaten-Prefix</label>
+                <label for="metadataPrefix" class="form-label">Metadaten prefix</label>
                 <input type="text" class="form-control" name="metadataPrefix" id="metadataPrefix" required
                        placeholder="z. B. oai_dc oder shop_xml" pattern="^[a-zA-Z0-9._-]+$"
-                       title="Nur Buchstaben, Zahlen, Punkt, Unterstrich und Bindestrich erlaubt">
+                       title="Only letters, numbers, dot, underscore and hyphen allowed">
             </div>
 
             <div class="mb-3">
-                <label for="schema" class="form-label">Schema-URL</label>
+                <label for="schema" class="form-label">Schema URL</label>
                 <input type="url" class="form-control" name="schema" id="schema" required
                        placeholder="https://www.openarchives.org/OAI/2.0/oai_dc.xsd"
-                       title="Bitte eine gültige URL angeben">
+                       title="Please enter a valid URL">
             </div>
 
             <div class="mb-3">
-                <label for="metadataNamespace" class="form-label">XML-Namespace</label>
+                <label for="metadataNamespace" class="form-label">XML Namespace</label>
                 <input type="url" class="form-control" name="metadataNamespace" id="metadataNamespace" required
                        placeholder="https://www.openarchives.org/OAI/2.0/oai_dc/"
-                       title="Bitte eine gültige URL angeben">
+                       title="Please enter a valid URL">
             </div>
 
             <div class="mb-3">
-                <label for="comment" class="form-label">Kommentar (optional)</label>
+                <label for="comment" class="form-label">Comment (optional)</label>
                 <textarea class="form-control" name="comment" id="comment" rows="2"
-                          placeholder="z. B. Pflichteintrag für Dublin Core laut OAI-PMH-Spezifikation"></textarea>
+                          placeholder="e.g. mandatory entry for Dublin Core according to the OAI-PMH specification"></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary">Speichern</button>
-            <a class="btn btn-secondary" href="?controller=meta&action=list">Abbrechen</a>
+            <div class="d-flex justify-content-between">
+                <a class="btn btn-secondary" href="?controller=meta&action=list">Back</a>
+                <button type="submit" class="btn btn-primary">Create metadata</button>
+            </div>
+
         </form>
     </div>
     <div class="col-md-6">

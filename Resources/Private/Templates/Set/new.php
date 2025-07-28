@@ -47,8 +47,10 @@
                           placeholder="Paste XML here if needed"><?= htmlspecialchars($setDescription ?? '') ?></textarea>
             </div>
 
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a class="btn btn-secondary" href="?controller=set&action=list">Cancel</a>
+            <div class="d-flex justify-content-between">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a class="btn btn-secondary" href="?controller=set&action=list">Cancel</a>
+            </div>
         </form>
     </div>
     <div class="col-md-6">

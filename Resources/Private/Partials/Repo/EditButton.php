@@ -6,6 +6,6 @@ echo LinkHelper::renderLink(
     'Repo',
     'edit',
     ['id' => $oaiRepo->getId()],
-    'Bearbeiten',
+    'Edit',
     ['class' => 'btn btn-sm btn-secondary']);
 ?>

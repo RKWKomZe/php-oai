@@ -52,7 +52,7 @@ class IndexController extends AbstractController
         SELECT *
         FROM oai_update_log
         ORDER BY id DESC
-        LIMIT 20
+        LIMIT 30
     ');
 
         $logs = $stmt->fetchAll();

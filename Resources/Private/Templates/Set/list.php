@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">OAI Sets</h1>
-    <a class="btn btn-secondary" href="?controller=set&action=new">Neues Set anlegen</a>
+    <a class="btn btn-secondary" href="?controller=set&action=new">Create new set</a>
 </div>
 
 <div class="alert alert-info">
@@ -13,7 +13,9 @@
 
 use RKW\OaiConnector\Utility\LinkHelper;
 
-if (!empty($setList)) : ?>
+if (empty($setList)) : ?>
+    <div class="alert alert-info">No sets found.</div>
+<?php else : ?>
     <table class="table table-striped table-hover">
         <thead>
         <tr>
@@ -21,8 +23,8 @@ if (!empty($setList)) : ?>
             <th>Set Spec</th>
             <th>Set Name</th>
             <th>Rang</th>
-            <th>Letzte Änderung</th>
-            <th>Aktionen</th>
+            <th>Last change</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody>
@@ -48,7 +50,7 @@ if (!empty($setList)) : ?>
                         'Set',
                         'edit',
                         ['repo' => $record->getRepo(), 'spec' => $record->getSetSpec()],
-                        'Bearbeiten',
+                        'Edit',
                         ['class' => 'btn btn-sm btn-secondary']
                     );
                     ?>
@@ -57,7 +59,7 @@ if (!empty($setList)) : ?>
                         'Set',
                         'delete',
                         ['repo' => $record->getRepo(), 'spec' => $record->getSetSpec()],
-                        'Löschen',
+                        'Delete',
                         [
                             'class' => 'btn btn-sm btn-danger',
                             'onclick' => 'return confirm("Are you sure you want to delete this set?")'
@@ -69,6 +71,4 @@ if (!empty($setList)) : ?>
         <?php endforeach; ?>
         </tbody>
     </table>
-<?php else : ?>
-    <p>Keine Sets gefunden.</p>
 <?php endif; ?>

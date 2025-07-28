@@ -1,4 +1,4 @@
-<h1>Metadatenformat bearbeiten</h1>
+<h1>Edit metadata format</h1>
 
 <div class="col-md-6">
     <form method="post" action="?controller=meta&action=update" id="metaForm" novalidate>

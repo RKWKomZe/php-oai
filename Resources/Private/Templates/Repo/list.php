@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="mb-0">OAI Repositories</h1>
-    <a class="btn btn-secondary" href="?controller=repo&action=new">Neues Repository anlegen</a>
+    <a class="btn btn-secondary" href="?controller=repo&action=new">Create new repository</a>
 </div>
 
 <div class="alert alert-info">
@@ -14,7 +14,7 @@
 <?php use RKW\OaiConnector\Utility\LinkHelper;
 
 if (empty($repoList)): ?>
-    <div class="alert alert-info">No records found for the selected repository.</div>
+    <div class="alert alert-info">No repos found.</div>
 <?php else: ?>
     <table class="table table-striped table-hover">
         <thead>
@@ -23,7 +23,7 @@ if (empty($repoList)): ?>
             <th>Base URL</th>
             <th>Version</th>
             <th>Admin Email</th>
-            <th>Aktion</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody>

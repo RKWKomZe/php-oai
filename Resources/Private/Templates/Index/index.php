@@ -62,6 +62,7 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
 
 <h3 class="mb-4">OAI Update Log</h3>
 
+
 <table class="table table-sm table-bordered table-striped">
     <thead class="table-light">
     <tr>
@@ -85,7 +86,7 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
             <td><?= htmlspecialchars($log['status'] ?? '-') ?></td>
             <td><?= (int)$log['meta_inserted'] ?></td>
             <td><?= (int)$log['meta_deleted'] ?></td>
-            <td><?= $log['error'] ? '❌' : '✔️' ?></td>
+            <td><?= $log['error'] ? '⚠️' : '🟩' ?></td>
         </tr>
     <?php endforeach; ?>
     </tbody>

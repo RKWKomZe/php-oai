@@ -10,8 +10,8 @@ $returnTo = $_GET['returnTo'] ?? null;
 <?php
 
 echo $returnTo
-    ? '<a href="' . htmlspecialchars($returnTo) . '" class="btn btn-sm btn-outline-secondary mb-3">&larr; Zurück zur Liste</a>'
-    : LinkHelper::renderLink('Item', 'list', ['repo' => $item->getRepo()], '&larr; Zurück zur Liste', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+    ? '<a href="' . htmlspecialchars($returnTo) . '" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back to list</a>'
+    : LinkHelper::renderLink('Item', 'list', ['repo' => $item->getRepo()], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
 
 ?>
 
