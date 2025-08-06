@@ -4,6 +4,11 @@ namespace RKW\OaiConnector\Factory;
 
 use RKW\OaiConnector\Utility\Pagination;
 
+/**
+ * PaginationFactory
+ *
+ * Factory for creating Pagination objects.
+ */
 class PaginationFactory
 {
     /**

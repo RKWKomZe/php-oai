@@ -9,10 +9,11 @@ use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 
+
 /**
+ * ItemController
  *
- * @toDo: Hier prüfen, ob man nicht auf "Oai_Backend.php" zurückgreift zum auslesen von Informationen!
- *
+ * Controller class for handling operations related to items.
  */
 class ItemController extends AbstractController
 {
@@ -31,6 +32,9 @@ class ItemController extends AbstractController
     }
 
 
+    /**
+     * constructor
+     */
     public function __construct()
     {
         parent::__construct();
@@ -39,16 +43,17 @@ class ItemController extends AbstractController
     }
 
 
+    /**
+     * Index action
+     */
     public function index(): void
     {
-
-
         //$this->render();
     }
 
 
     /**
-     * @throws \ReflectionException
+     * Retrieves and renders a list of repositories and their respective items with pagination.
      */
     public function list(): void
     {
@@ -79,42 +84,13 @@ class ItemController extends AbstractController
     }
 
 
-/*
-    public function show(): void
-    {
-        $identifier = $_GET['id'] ?? null;
-        $repo = $_GET['repo'] ?? null;
-
-        if (!$identifier || !$repo) {
-            FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
-            Redirect::to('list', 'Index');
-            return;
-        }
-
-        $conn = ConfigLoader::getDatabaseConnection();
-        $stmt = $conn->prepare('
-        SELECT identifier, datestamp, metadataPrefix, deleted, metadata, created, updated 
-        FROM oai_item_meta 
-        WHERE repo = ? AND identifier = ? AND history = 0
-        LIMIT 1
-    ');
-        $stmt->bind_param('ss', $repo, $identifier);
-        $stmt->execute();
-        $result = $stmt->get_result()->fetch_assoc();
-
-        if (!$result) {
-            FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
-            Redirect::to('list', 'Index');
-            return;
-        }
-
-        $this->render('show', [
-            'record' => $result,
-            'repo' => $repo,
-        ]);
-    }
-*/
-
+    /**
+     * Displays a specific record based on provided identifier and repository ID.
+     *
+     * Retrieves the record using the identifier and repository ID sent via the GET request. If the parameters are missing
+     * or the record is not found in the repository, redirects to the index page with an appropriate flash message.
+     * Otherwise, renders a view showing the details of the record.
+     */
     public function show(): void
     {
         $identifier = $_GET['id'] ?? null;

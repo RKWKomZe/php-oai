@@ -4,13 +4,21 @@ namespace RKW\OaiConnector\Integration\Shopware;
 
 use RKW\OaiConnector\Utility\ConfigLoader;
 
+/**
+ * Class ShopwareOaiFetcherOld
+ *
+ * Responsible for interacting with the Shopware API to fetch and transform
+ * product data into the OAI-PMH metadata format.
+ */
 class ShopwareOaiFetcherOld
-
 {
     private string $baseUrl;
     private string $clientId;
     private string $clientSecret;
 
+    /**
+     * constructor
+     */
     public function __construct()
     {
         $config = ConfigLoader::load();
@@ -20,6 +28,12 @@ class ShopwareOaiFetcherOld
         $this->clientSecret = $config['api']['shopware']['clientSecret'];
     }
 
+
+    /**
+     * Fetches the access token from the API using client credentials.
+     *
+     * @return string The access token retrieved from the API.
+     */
     public function fetchAccessToken(): string
     {
         $url = "{$this->baseUrl}/api/oauth/token";
@@ -48,6 +62,14 @@ class ShopwareOaiFetcherOld
             //?? throw new Exception("Kein Access-Token erhalten");
     }
 
+
+    /**
+     * Fetches products from the API.
+     *
+     * @param string $accessToken The access token used for API authentication.
+     *
+     * @return array Returns an array of products retrieved from the API.
+     */
     public function fetchProducts(string $accessToken): array
     {
         $url = "{$this->baseUrl}/api/product";
@@ -69,6 +91,14 @@ class ShopwareOaiFetcherOld
         return $data['data'] ?? [];
     }
 
+
+    /**
+     * Transforms a product array into an Open Archives Initiative (OAI) compatible format.
+     *
+     * @param array $product The product data to transform.
+     *
+     * @return array The transformed product data in OAI format.
+     */
     public function transformProductToOai(array $product): array
     {
         $attributes = $product['attributes'] ?? [];
@@ -85,6 +115,15 @@ class ShopwareOaiFetcherOld
         ];
     }
 
+
+    /**
+     * Fetches and transforms products.
+     *
+     * Retrieves an access token, fetches products using the token,
+     * and transforms each product into an OAI-compatible format.
+     *
+     * @return array An array of transformed OAI records.
+     */
     public function fetchAndTransform(): array
     {
         $token = $this->fetchAccessToken();

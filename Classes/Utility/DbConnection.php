@@ -5,8 +5,19 @@ namespace RKW\OaiConnector\Utility;
 use PDO;
 use PDOException;
 
+/**
+ * DbConnection
+ *
+ * Handles database connections using PDO and ensures a shared connection instance.
+ */
 class DbConnection
 {
+    /**
+     * pdo
+     * Holds a shared PDO database connection instance
+     *
+     * @var \PDO|null
+     */
     protected static ?PDO $pdo = null;
 
     /**

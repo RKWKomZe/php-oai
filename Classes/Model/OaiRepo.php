@@ -2,74 +2,362 @@
 
 namespace RKW\OaiConnector\Model;
 
+/**
+ * OaiRepo
+ *
+ * Represents an OAI repository with configurations and metadata properties.
+ */
 class OaiRepo
 {
+    /**
+     * id
+     *
+     * @var string
+     */
     protected string $id = '';
+
+    /**
+     * repositoryName
+     *
+     * @var string
+     */
     protected string $repositoryName = '';
+
+    /**
+     * baseURL
+     *
+     * @var string
+     */
     protected string $baseURL = '';
+
+    /**
+     * protocolVersion
+     *
+     * @var string
+     */
     protected string $protocolVersion = '';
+
+    /**
+     * adminEmails
+     *
+     * @var string
+     */
     protected string $adminEmails = '';
+
+    /**
+     * earliestDatestamp
+     *
+     * @var string
+     */
     protected string $earliestDatestamp = '';
-    protected string $deletedRecord = 'no'; // 'no', 'transient', 'persistent'
-    protected string $granularity = 'YYYY-MM-DD'; // or 'YYYY-MM-DDThh:mm:ssZ'
+
+    /**
+     * deletedRecord
+     * Possible values: 'no', 'transient', 'persistent'
+     *
+     * @var string
+     */
+    protected string $deletedRecord = 'no';
+
+    /**
+     * granularity
+     * Possible values: 'YYYY-MM-DD' or 'YYYY-MM-DDThh:mm:ssZ'
+     *
+     * @var string
+     */
+    protected string $granularity = 'YYYY-MM-DD';
+
+    /**
+     * maxListSize
+     *
+     * @var int|null
+     */
     protected ?int $maxListSize = null;
+
+    /**
+     * tokenDuration
+     *
+     * @var int|null
+     */
     protected ?int $tokenDuration = null;
+
+    /**
+     * updated
+     *
+     * @var string
+     */
     protected string $updated = '';
+
+    /**
+     * comment
+     *
+     * @var string
+     */
     protected string $comment = '';
 
-    /*
-    public function __construct(array $data = [])
+
+
+    /**
+     * Gets id
+     *
+     * @return string
+     */
+    public function getId(): string
     {
-        $this->id = $data['id'] ?? '';
-        $this->repositoryName = $data['repositoryName'] ?? '';
-        $this->baseURL = $data['baseURL'] ?? '';
-        $this->protocolVersion = $data['protocolVersion'] ?? '';
-        $this->adminEmails = $data['adminEmails'] ?? '';
-        $this->earliestDatestamp = $data['earliestDatestamp'] ?? '';
-        $this->deletedRecord = $data['deletedRecord'] ?? 'no';
-        $this->granularity = $data['granularity'] ?? 'YYYY-MM-DD';
-        $this->maxListSize = isset($data['maxListSize']) ? (int)$data['maxListSize'] : null;
-        $this->tokenDuration = isset($data['tokenDuration']) ? (int)$data['tokenDuration'] : null;
-        $this->updated = $data['updated'] ?? '';
-        $this->comment = $data['comment'] ?? '';
+        return $this->id;
     }
-    */
 
-    // --- Getter & Setter Methods ---
+    /**
+     * Sets id
+     *
+     * @param string $id
+     * @return void
+     */
+    public function setId(string $id): void
+    {
+        $this->id = $id;
+    }
 
-    public function getId(): string { return $this->id; }
-    public function setId(string $id): void { $this->id = $id; }
 
-    public function getRepositoryName(): string { return $this->repositoryName; }
-    public function setRepositoryName(string $repositoryName): void { $this->repositoryName = $repositoryName; }
+    /**
+     * Gets repository name
+     *
+     * @return string
+     */
+    public function getRepositoryName(): string
+    {
+        return $this->repositoryName;
+    }
 
-    public function getBaseURL(): string { return $this->baseURL; }
-    public function setBaseURL(string $baseURL): void { $this->baseURL = $baseURL; }
+    /**
+     * Sets repository name
+     *
+     * @param string $repositoryName
+     * @return void
+     */
+    public function setRepositoryName(string $repositoryName): void
+    {
+        $this->repositoryName = $repositoryName;
+    }
 
-    public function getProtocolVersion(): string { return $this->protocolVersion; }
-    public function setProtocolVersion(string $protocolVersion): void { $this->protocolVersion = $protocolVersion; }
 
-    public function getAdminEmails(): string { return $this->adminEmails; }
-    public function setAdminEmails(string $adminEmails): void { $this->adminEmails = $adminEmails; }
+    /**
+     * Gets base URL
+     *
+     * @return string
+     */
+    public function getBaseURL(): string
+    {
+        return $this->baseURL;
+    }
 
-    public function getEarliestDatestamp(): string { return $this->earliestDatestamp; }
-    public function setEarliestDatestamp(string $earliestDatestamp): void { $this->earliestDatestamp = $earliestDatestamp; }
+    /**
+     * Sets base URL
+     *
+     * @param string $baseURL
+     * @return void
+     */
+    public function setBaseURL(string $baseURL): void
+    {
+        $this->baseURL = $baseURL;
+    }
 
-    public function getDeletedRecord(): string { return $this->deletedRecord; }
-    public function setDeletedRecord(string $deletedRecord): void { $this->deletedRecord = $deletedRecord; }
 
-    public function getGranularity(): string { return $this->granularity; }
-    public function setGranularity(string $granularity): void { $this->granularity = $granularity; }
+    /**
+     * Gets protocol version
+     *
+     * @return string
+     */
+    public function getProtocolVersion(): string
+    {
+        return $this->protocolVersion;
+    }
 
-    public function getMaxListSize(): ?int { return $this->maxListSize; }
-    public function setMaxListSize(?int $maxListSize): void { $this->maxListSize = $maxListSize; }
+    /**
+     * Sets protocol version
+     *
+     * @param string $protocolVersion
+     * @return void
+     */
+    public function setProtocolVersion(string $protocolVersion): void
+    {
+        $this->protocolVersion = $protocolVersion;
+    }
 
-    public function getTokenDuration(): ?int { return $this->tokenDuration; }
-    public function setTokenDuration(?int $tokenDuration): void { $this->tokenDuration = $tokenDuration; }
 
-    public function getUpdated(): string { return $this->updated; }
-    public function setUpdated(string $updated): void { $this->updated = $updated; }
+    /**
+     * Gets admin emails
+     *
+     * @return string
+     */
+    public function getAdminEmails(): string
+    {
+        return $this->adminEmails;
+    }
 
-    public function getComment(): string { return $this->comment; }
-    public function setComment(string $comment): void { $this->comment = $comment; }
+    /**
+     * Sets admin emails
+     *
+     * @param string $adminEmails
+     * @return void
+     */
+    public function setAdminEmails(string $adminEmails): void
+    {
+        $this->adminEmails = $adminEmails;
+    }
+
+
+    /**
+     * Gets earliest datestamp
+     *
+     * @return string
+     */
+    public function getEarliestDatestamp(): string
+    {
+        return $this->earliestDatestamp;
+    }
+
+    /**
+     * Sets earliest datestamp
+     *
+     * @param string $earliestDatestamp
+     * @return void
+     */
+    public function setEarliestDatestamp(string $earliestDatestamp): void
+    {
+        $this->earliestDatestamp = $earliestDatestamp;
+    }
+
+
+    /**
+     * Gets deleted record
+     *
+     * @return string
+     */
+    public function getDeletedRecord(): string
+    {
+        return $this->deletedRecord;
+    }
+
+    /**
+     * Sets deleted record
+     *
+     * @param string $deletedRecord
+     * @return void
+     */
+    public function setDeletedRecord(string $deletedRecord): void
+    {
+        $this->deletedRecord = $deletedRecord;
+    }
+
+
+    /**
+     * Gets granularity
+     *
+     * @return string
+     */
+    public function getGranularity(): string
+    {
+        return $this->granularity;
+    }
+
+    /**
+     * Sets granularity
+     *
+     * @param string $granularity
+     * @return void
+     */
+    public function setGranularity(string $granularity): void
+    {
+        $this->granularity = $granularity;
+    }
+
+
+    /**
+     * Gets max list size
+     *
+     * @return int|null
+     */
+    public function getMaxListSize(): ?int
+    {
+        return $this->maxListSize;
+    }
+
+    /**
+     * Sets max list size
+     *
+     * @param int|null $maxListSize
+     * @return void
+     */
+    public function setMaxListSize(?int $maxListSize): void
+    {
+        $this->maxListSize = $maxListSize;
+    }
+
+
+    /**
+     * Gets token duration
+     *
+     * @return int|null
+     */
+    public function getTokenDuration(): ?int
+    {
+        return $this->tokenDuration;
+    }
+
+    /**
+     * Sets token duration
+     *
+     * @param int|null $tokenDuration
+     * @return void
+     */
+    public function setTokenDuration(?int $tokenDuration): void
+    {
+        $this->tokenDuration = $tokenDuration;
+    }
+
+
+    /**
+     * Gets updated
+     *
+     * @return string
+     */
+    public function getUpdated(): string
+    {
+        return $this->updated;
+    }
+
+    /**
+     * Sets updated
+     *
+     * @param string $updated
+     * @return void
+     */
+    public function setUpdated(string $updated): void
+    {
+        $this->updated = $updated;
+    }
+
+
+    /**
+     * Gets comment
+     *
+     * @return string
+     */
+    public function getComment(): string
+    {
+        return $this->comment;
+    }
+
+    /**
+     * Sets comment
+     *
+     * @param string $comment
+     * @return void
+     */
+    public function setComment(string $comment): void
+    {
+        $this->comment = $comment;
+    }
+
 }

@@ -2,8 +2,25 @@
 
 namespace RKW\OaiConnector\Utility;
 
+/**
+ * MenuHelper
+ *
+ * Provides helper methods for rendering navigation menu links.
+ */
 class MenuHelper
 {
+    /**
+     * Renders a menu link element for a navigation menu.
+     *
+     * @param string|null $controller The name of the controller to be linked (optional).
+     * @param string|null $action The name of the action to be linked (optional).
+     * @param string $label The label text for the menu link.
+     * @param array $params Additional query parameters to include in the link.
+     * @param array $attributes HTML attributes to include in the `<a>` tag (e.g., `['target' => '_blank']`).
+     * @param string $linkClass The CSS class to apply to the `<a>` tag. Defaults to 'nav-link'.
+     *
+     * @return string The generated HTML code for the menu link (wrapped in a `<li>` element).
+     */
     public static function renderMenuLink(
         ?string $controller,
         ?string $action,
@@ -23,6 +40,16 @@ class MenuHelper
 
         // Determine if this is the active link (Controller match is sufficient)
         $isActive = $controller !== null && $controller === $currentController;
+
+        if ($controller !== null && $controller === $currentController) {
+            // If a specific action is set for the menu link, require it to match as well
+            if (isset($action) && $action !== '' && isset($currentAction)) {
+                $isActive = ($action === $currentAction);
+            } else {
+                // Fallback: Only controller match
+                $isActive = true;
+            }
+        }
 
         // Compose link class
         $classList = [$linkClass];

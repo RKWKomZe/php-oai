@@ -19,6 +19,11 @@ Creates: /index.php?action=show&controller=Product&id=123&foo=bar
 
 namespace RKW\OaiConnector\Utility;
 
+/**
+ * Redirect
+ *
+ * Provides a helper class for handling HTTP redirects to specific controller actions.
+ */
 class Redirect
 {
     /**

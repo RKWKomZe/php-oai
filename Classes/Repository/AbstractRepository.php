@@ -10,16 +10,60 @@ use RKW\OaiConnector\Utility\Pagination;
 
 /**
  * AbstractRepository
+ *
+ * Abstract class providing a generic repository implementation with methods to handle database operations.
  */
 abstract class AbstractRepository implements RepoContextAwareInterface
 {
+    /**
+     * settings
+     *
+     * @var array
+     */
     protected array $settings = [];
+
+    /**
+     * pdo
+     *
+     * @var \PDO
+     */
     protected PDO $pdo;
 
+    /**
+     * contextRepoId
+     *
+     * @var string|null
+     */
     protected ?string $contextRepoId = '';
 
+    /**
+     * tempPagination
+     *
+     * @var \RKW\OaiConnector\Utility\Pagination|null
+     */
     protected ?\RKW\OaiConnector\Utility\Pagination $tempPagination = null;
 
+    /**
+     * modelClass
+     * Optional model class for mapping
+     *
+     * @var string|null
+     */
+    protected ?string $modelClass = null;
+
+    /**
+     * returnModels
+     * Internal flag for model-return mode
+     *
+     * @var bool
+     */
+    protected bool $returnModels = false;
+
+    /**
+     * constructor
+     *
+     * @param string|null $repoName
+     */
     public function __construct(?string $repoName = null)
     {
         // Only needed if context is used. The "repo" has a similar context to the StoragePid in TYPO3
@@ -31,8 +75,12 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $this->pdo = $this->initPdo();
     }
 
+
     /**
-     * @return array
+     * Retrieves all records from the database, applying repository context
+     * and optional pagination if set.
+     *
+     * @return array The list of records as associative arrays.
      * @throws \ReflectionException
      */
     public function findAll(): array
@@ -66,9 +114,16 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
 
     /**
-     * @param string $id
-     * @return array|null
-     * @throws \ReflectionException
+     * Fetches a record by its unique identifier.
+     *
+     * Executes a SQL query to retrieve a single record from the database
+     * where the `id` matches the provided value. The function ensures
+     * additional context conditions are applied to the query, if applicable.
+     *
+     * @param string $id The unique identifier of the record to retrieve.
+     * @return array|object|null Returns the record as an array or object if found, or null if no matching record exists.
+     *
+     * @throws \PDOException If there is an issue with query execution.
      */
     public function findById(string $id): array|object|null
     {
@@ -92,7 +147,18 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
 
     /**
-     *  UNTESTED!
+     * Inserts a new record into the database based on the provided model.
+     *
+     * Generates an `INSERT` SQL query dynamically by extracting private and protected
+     * properties of the provided object through reflection. It expects the object
+     * to have getter methods conforming to the naming convention `get<PropertyName>`.
+     *
+     * @param object $model The object representing the data to be inserted. Its properties
+     *                      are extracted and used as the column values for the insertion.
+     * @return bool Returns true if the insertion is successful, false otherwise.
+     *
+     * @throws \RuntimeException If the table name is not defined in the repository.
+     * @throws \PDOException If the query preparation or execution fails.
      */
     public function insert(object $model): bool
     {
@@ -130,6 +196,18 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
+    /**
+     * Inserts or updates a record in the database based on its unique key(s).
+     *
+     * @param object $model The data model instance to insert or update in the database.
+     *                       The model should have private or protected properties with
+     *                       corresponding public getter methods for each property.
+     * @return bool Returns true on successful execution of the query, false otherwise.
+     *
+     * @throws \RuntimeException If the table name is not defined in the repository.
+     * @throws \ReflectionException If the given model class cannot be reflected.
+     * @throws \PDOException If there is an issue with executing the SQL query.
+     */
     public function upsert(object $model): bool
     {
         if (empty($this->tableName)) {
@@ -174,10 +252,16 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
-
     /**
-     *  UNTESTED!
+     * Updates a record in the database based on the provided model and primary key.
+     *
+     * @param object $model The model object containing the data to update.
+     * @param array|string $primaryKey The primary key(s) to identify the record. Defaults to 'id'.
+     * @return bool Returns true if the update operation was successful, or false otherwise.
+     *
+     * @throws \RuntimeException If the table name is not defined in the repository.
+     * @throws \InvalidArgumentException If primary key value(s) are null, empty, or cannot be resolved.
+     * @throws \PDOException If there is an issue with query execution.
      */
     public function update(object $model, array|string $primaryKey = 'id'): bool
     {
@@ -233,10 +317,16 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
-
     /**
-     *  UNTESTED!
+     * Deletes a specific record from the database based on its primary key(s).
+
+     * @param object $model The model instance representing the record to delete. The model must provide appropriate getter methods for the primary keys.
+     * @param array|string $primaryKeys The primary key(s) used to identify the record. Can be a string for a single key or an array of keys.
+     * @return bool Returns true on successful deletion, or false on failure.
+     *
+     * @throws \RuntimeException If the table name in the repository is not defined.
+     * @throws \InvalidArgumentException If the model does not have getter methods for the provided primary keys or if any primary key value is empty.
+     * @throws \PDOException If there is an issue with query preparation or execution.
      */
     public function delete(object $model, array|string $primaryKeys = 'id'): bool
     {
@@ -275,9 +365,17 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
-
-
+    /**
+     * Retrieves multiple records based on specific criteria and ordering.
+     *
+     * @param array $criteria An associative array where the keys are column names
+     *                        and the values are the corresponding conditions for filtering results.
+     * @param array $orderBy An associative array where the keys are column names and the values
+     *                        specify sorting directions ('ASC' or 'DESC').
+     * @return array Returns an array of records matching the criteria.
+     *
+     * @throws \PDOException If a database error occurs during query execution.
+     */
     public function findBy(
         array $criteria = [],
         array $orderBy = []
@@ -341,8 +439,16 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
-
+    /**
+     * Retrieves a single record based on specific criteria.
+     *
+     * @param array $criteria An associative array of column-value pairs representing the query conditions.
+     * @param array $orderBy Optional. An associative array specifying column-direction pairs for ordering results. Direction can be 'ASC' or 'DESC'.
+     * @return array|object|null Returns the matched record as an array or object, or null if no result is found.
+     *
+     * @throws \InvalidArgumentException If the $criteria array is empty or invalid.
+     * @throws \PDOException If there is a problem executing the query.
+     */
     public function findOneBy(array $criteria, array $orderBy = []): array|object|null
     {
         //$this->requireRepoContext();
@@ -383,7 +489,18 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
+    /**
+     * Counts the number of records matching the specified criteria.
+     *
+     * @param array $criteria An associative array where the keys are column names,
+     *                         and the values are the corresponding filter values.
+     *                         Example: ['column1' => 'value1', 'column2' => 'value2'].
+     *
+     * @return int The number of records that match the given criteria.
+     *
+     * @throws \InvalidArgumentException If the provided criteria are invalid.
+     * @throws \PDOException If an error occurs during query preparation or execution.
+     */
     public function countBy(array $criteria = []): int
     {
         $this->requireRepoContext();
@@ -413,7 +530,13 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
-
+    /**
+     * Initializes and returns a PDO instance for database interaction.
+     *
+     * @return \PDO The initialized PDO instance for database operations.
+     *
+     * @throws \PDOException If there is an issue while creating the PDO instance.
+     */
     protected function initPdo(): PDO
     {
         try {
@@ -429,14 +552,23 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         }
     }
 
+
     /**
-     * Must be implemented in child class to define the database table.
+     * Retrieves the name of the database table associated with the current repository.
+     *
+     * @return string The name of the database table.
      */
     protected function getTableName(): string
     {
         return $this->tableName;
     }
 
+
+    /**
+     * Ensures that the repository context identifier is set.
+     *
+     * @throws \RuntimeException If the `repo_id` context is not set.
+     */
     protected function ensureContextRepoId(): void
     {
         if ($this->contextRepoId === null) {
@@ -444,6 +576,17 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         }
     }
 
+
+    /**
+     * Applies repository-specific context to SQL query conditions.
+     *
+     * @param array &$whereClauses An array of SQL `WHERE` clause components to be modified.
+     * @param array &$params An associative array of parameters used in the SQL query, to which the repository context will be appended.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the repository context is not set but expected.
+     */
     protected function applyRepoContextToWhere(array &$whereClauses, array &$params): void
     {
         // only if the repo context is set
@@ -460,6 +603,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         }
 
     }
+
 
     /**
      * Ensures that a valid repository context is available and returns it.
@@ -492,46 +636,73 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     }
 
 
+    /**
+     * Retrieves the column name used for the repository identifier.
+     *
+     * @return string The name of the repository identifier column.
+     */
     protected function getRepoColumnName(): string
     {
         return 'repo';
     }
 
 
-
+    /**
+     * Sets the repository context identifier.
+     *
+     * @param string $repoId The unique identifier for the repository context.
+     * @return void
+     */
     public function setContextRepoId(string $repoId): void
     {
         $this->contextRepoId = $repoId;
     }
 
+
+    /**
+     * Retrieves the repository context identifier.
+     *
+     * Returns the identifier of the repository context currently in use, or null
+     * if no context has been set.
+     *
+     * @return string|null The repository context identifier or null if not set.
+     */
     public function getContextRepoId(): ?string
     {
         return $this->contextRepoId;
     }
 
+
+    /**
+     * Adds a pagination configuration to the current query context.
+     *
+     * @param Pagination $pagination The pagination object that defines limit, offset, and other pagination parameters.
+     * @return static Returns the current instance for method chaining.
+     */
     public function withPagination(Pagination $pagination): static
     {
         $this->tempPagination = $pagination;
         return $this;
     }
 
-    // Optional model class for mapping
-    protected ?string $modelClass = null;
 
-    // Internal flag for model-return mode
-    protected bool $returnModels = false;
-
+    /**
+     * Enables the return of results as model objects.
+     *
+     * @return static Returns the current instance for method chaining.
+     */
     public function withModels(): static
     {
         $this->returnModels = true;
         return $this;
     }
 
+
     /**
      * Finalizes the result by optionally mapping to model objects.
      *
      * @param array $rows
-     * @return array
+     * @return array|object|null
      * @throws \ReflectionException
      */
     protected function finalizeResult(array $rows): array|object|null
@@ -556,8 +727,9 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         return $rows;
     }
 
+
     /**
-     * Helper: detects whether array is a flat associative row, not a list
+     * Helper: detects whether an array is a flat associative row, not a list
      */
     protected function isFlatAssocArray(array $data): bool
     {

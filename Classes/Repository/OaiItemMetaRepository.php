@@ -6,18 +6,29 @@ use RKW\OaiConnector\Model\OaiItemMeta;
 use RKW\OaiConnector\Utility\Pagination;
 use PDO;
 
+/**
+ * OaiItemMetaRepository
+ *
+ * Repository class for handling OAI Item Metadata-related database operations.
+ */
 class OaiItemMetaRepository extends AbstractRepository
 {
+    /**
+     * modelClass
+     * Fully qualified model class name, defaults to OaiItemMeta::class
+     *
+     * @var string|null
+     */
     protected ?string $modelClass = OaiItemMeta::class;
 
+    /**
+     * tableName
+     * Database table name, defaults to 'oai_item_meta'
+     *
+     * @var string|null
+     */
     protected ?string $tableName = 'oai_item_meta';
 
-    /*
-    protected function getTableName(): string
-    {
-        return 'oai_item_meta';
-    }
-    */
 
     /**
      * Find all items by repo ID, optionally paginated.
@@ -39,6 +50,7 @@ class OaiItemMetaRepository extends AbstractRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 
     /**
      * Count all items by repo ID.

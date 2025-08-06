@@ -11,6 +11,11 @@ use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 
+/**
+ * RepoController
+ *
+ * Controller for managing repositories and their descriptions.
+ */
 class RepoController extends AbstractController
 {
     private ?OaiRepoRepository $oaiRepoRepository = null;
@@ -26,6 +31,10 @@ class RepoController extends AbstractController
         return $this->oaiRepoDescriptionRepository ??= new OaiRepoDescriptionRepository();
     }
 
+
+    /**
+     * constructor
+     */
     public function __construct()
     {
         parent::__construct();
@@ -33,8 +42,9 @@ class RepoController extends AbstractController
         $this->oaiRepoDescriptionRepository = $this->getOaiRepoDescriptionRepository();
     }
 
+
     /**
-     * @throws \ReflectionException
+     * Lists repositories with pagination and renders the list view.
      */
     public function list(): void
     {
@@ -48,6 +58,15 @@ class RepoController extends AbstractController
     }
 
 
+    /**
+     * Displays a specific record based on the provided identifier.
+     *
+     * Retrieves the record from the repository using the identifier from the request.
+     * If the identifier is missing or the record is not found, redirects to the list view with a corresponding message.
+     * Fetches related description information for the record and renders the show view with the model objects.
+     *
+     * @return void
+     */
     public function show(): void
     {
         $identifier = $_GET['id'] ?? null;
@@ -80,11 +99,27 @@ class RepoController extends AbstractController
         ]);
     }
 
+
+    /**
+     * Renders the 'new' view.
+     */
     public function new(): void
     {
         $this->render('new');
     }
 
+
+    /**
+     * Creates a new OAI repository and its description based on posted data.
+     *
+     * Maps the posted data to `OaiRepo` and `OaiRepoDescription` models, associates the description
+     * with the repository, sets the updated timestamp on the repository, and saves the data.
+     *
+     * Provides feedback to the user regarding the success or failure of the operation
+     * through flash messages and redirects accordingly.
+     *
+     * @throws Exception If an error occurs during data mapping, insertion, or redirection.
+     */
     public function create(): void
     {
         $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
@@ -109,7 +144,19 @@ class RepoController extends AbstractController
     }
 
 
-
+    /**
+     * Handles the edit operation.
+     *
+     * This method is responsible for retrieving the necessary data for editing
+     * a specific repository record based on the provided identifier. It checks
+     * for the existence of the identifier, fetches the associated repository and
+     * its description models, and renders the edit view with the retrieved data.
+     *
+     * If the identifier is missing, a flash message is shown, and the user is redirected to the repository list.
+     *
+     * @return void
+     * @throws \ReflectionException
+     */
     public function edit(): void
     {
         $identifier = $_GET['id'] ?? null;
@@ -130,6 +177,14 @@ class RepoController extends AbstractController
     }
 
 
+    /**
+     * Updates an OaiRepo entity and its associated OaiRepoDescription entity
+     * based on the POST data. Handles data mapping, relation updating,
+     * persistence, and redirects to the appropriate page with a success message.
+     *
+     * @return void
+     * @throws \ReflectionException
+     */
     public function update(): void
     {
         $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
@@ -147,6 +202,10 @@ class RepoController extends AbstractController
     }
 
 
+    /**
+     * Deletes an OaiRepo entity and its associated description, if present.
+     * Displays a success message and redirects to the list view upon completion.
+     */
     public function delete(): void
     {
         $oaiRepo = GenericModelMapper::map($_GET, OaiRepo::class);

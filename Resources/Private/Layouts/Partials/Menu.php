@@ -15,9 +15,11 @@ use RKW\OaiConnector\Utility\MenuHelper;
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+                <!--
                 <li class="nav-item">
                     <?php echo MenuHelper::renderMenuLink(null, null, 'Start'); ?>
                 </li>
+                -->
                 <li class="nav-item">
                     <?php echo MenuHelper::renderMenuLink('Import', 'list', 'Import'); ?>
                 </li>

@@ -1,6 +1,11 @@
 <?php
 namespace RKW\OaiConnector\Controller;
 
+/**
+ * ErrorController
+ *
+ * Handles error responses by rendering appropriate error pages.
+ */
 class ErrorController extends AbstractController
 {
     /**
@@ -14,6 +19,7 @@ class ErrorController extends AbstractController
         $this->render('notfound', ['message' => $message]);
     }
 
+
     /**
      * Show a 403 forbidden error.
      *
@@ -24,6 +30,7 @@ class ErrorController extends AbstractController
         http_response_code(403);
         $this->render('forbidden', ['message' => $message]);
     }
+
 
     /**
      * General error fallback (500)

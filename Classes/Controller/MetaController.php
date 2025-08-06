@@ -11,6 +11,14 @@ use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 
+/**
+ * MetaController
+ *
+ * The MetaController handles CRUD operations for OaiMeta entities,
+ * allowing for listing, viewing, creating, editing, updating, and deleting records.
+ *
+ * Dependency Injection for repositories is handled through protected methods.
+ */
 class MetaController extends AbstractController
 {
     private ?OaiMetaRepository $oaiMetaRepository = null;
@@ -27,6 +35,9 @@ class MetaController extends AbstractController
         return $this->oaiRepoRepository ??= new OaiRepoRepository();
     }
 
+    /**
+     * constructor
+     */
     public function __construct()
     {
         parent::__construct();
@@ -34,13 +45,12 @@ class MetaController extends AbstractController
         $this->oaiRepoRepository = $this->getOaiRepoRepository();
     }
 
+
     /**
-     * @throws \ReflectionException
+     * Lists all metadata models and renders the 'list' view.
      */
     public function list(): void
     {
-        //$pagination = PaginationFactory::fromRequestValues();
-
         $metaList = $this->oaiMetaRepository->withModels()->findAll();
 
         $this->render('list', [
@@ -49,6 +59,18 @@ class MetaController extends AbstractController
     }
 
 
+    /**
+     * Displays a detailed view of a metadata record based on the provided parameters.
+     *
+     * The method retrieves metadata and repository information using the
+     * provided 'prefix' and 'repo' parameters from the query string. If
+     * required parameters are missing or the record cannot be found,
+     * appropriate flash messages are added, and the user is redirected
+     * to the metadata list view.
+     *
+     * The method also retrieves the repository list and renders the
+     * 'show' view with related data.
+     */
     public function show(): void
     {
         $metaPrefix = $_GET['prefix'] ?? null;
@@ -84,8 +106,9 @@ class MetaController extends AbstractController
         ]);
     }
 
+
     /**
-     * @throws \ReflectionException
+     * Displays the form for creating a new entity.
      */
     public function new(): void
     {
@@ -93,22 +116,14 @@ class MetaController extends AbstractController
         $this->render('new', ['repoList' => $repoList]);
     }
 
+
+    /**
+     * Creates a new OAI Meta entry.
+     * Maps the data from the request, applies necessary updates, and attempts to save it to the repository.
+     * Handles success and failure states with appropriate messaging and redirection.
+     */
     public function create(): void
     {
-
-        /*
-        $data = $_POST;
-        // Basic validation for required fields
-        $requiredFields = ['id', 'repositoryName', 'baseURL', 'protocolVersion', 'deletedRecord', 'granularity'];
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                FlashMessage::add("Missing required field: {$field}",  FlashMessage::TYPE_DANGER);
-                $this->redirect('Repo', 'new');
-                return;
-            }
-        }
-        */
-
         $oaiMeta = GenericModelMapper::map($_POST, OaiMeta::class);
 
         $oaiMeta->setUpdated(date('Y-m-d H:i:s'));
@@ -125,7 +140,16 @@ class MetaController extends AbstractController
     }
 
 
-
+    /**
+     * Handles the edit functionality for updating metadata records.
+     *
+     * Extracts the 'prefix' and 'repo' parameters from the GET request,
+     * validates their presence, and fetches the corresponding metadata
+     * record and repository list for rendering the edit view.
+     *
+     * Redirects to the list page with an error message if required parameters
+     * are missing.
+     */
     public function edit(): void
     {
         $metaPrefix = $_GET['prefix'] ?? null;
@@ -151,6 +175,15 @@ class MetaController extends AbstractController
     }
 
 
+    /**
+     * Updates an OAI Metadata record by mapping data from the POST request,
+     * setting the updated timestamp, and updating the repository.
+     *
+     * Adds a success flash message upon successful update and redirects to the
+     * specified meta display.
+     *
+     * @return void
+     */
     public function update(): void
     {
         //$repo = new \RKW\OaiConnector\Model\OaiRepo($_POST);
@@ -167,6 +200,15 @@ class MetaController extends AbstractController
     }
 
 
+    /**
+     * Deletes a specific metadata record based on provided parameters.
+     *
+     * Retrieves the metadata record identified by 'prefix' and 'repo' from the request
+     * and deletes it from the repository. Handles validation of parameters and sets
+     * appropriate flash messages for success or failure. Redirects the user after operation.
+     *
+     * @return void
+     */
     public function delete(): void
     {
         $metaPrefix = $_GET['prefix'] ?? null;

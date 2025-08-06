@@ -13,6 +13,11 @@ use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 
+/**
+ * ImportController
+ *
+ * Controller responsible for handling import processes.
+ */
 class ImportController extends AbstractController
 {
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
@@ -30,6 +35,9 @@ class ImportController extends AbstractController
     }
 
 
+    /**
+     * Constructor method for initializing the base class and setting up the repositories.
+     */
     public function __construct()
     {
         parent::__construct();
@@ -38,6 +46,19 @@ class ImportController extends AbstractController
     }
 
 
+    /**
+     * Renders a list of products fetched from Shopware within the given date range and pagination parameters.
+     *
+     * Retrieves data from Shopware OAI API based on provided filters (date range, limit, and page).
+     * Identifies existing OAI item identifiers within the active repository.
+     * Displays the list of products alongside repository information and pagination details in the view.
+     *
+     * The active repository is resolved from the request parameters, repository list, or default settings.
+     *
+     * If no repositories are found, an error message is displayed, notifying the user to create a repository.
+     *
+     * @throws \Exception|GuzzleException
+     */
     public function list(): void
     {
         $fromParam = $_GET['from'] ?? null;
@@ -98,6 +119,37 @@ class ImportController extends AbstractController
     }
 
 
+    /**
+     * Imports a single product via Shopware API and updates the database.
+     *
+     * This method handles the process of importing a single product, starting from fetching the product
+     * using the Shopware API, passing the records to the updater, and monitoring for any errors that could occur
+     * during the update process. It supports both AJAX and non-AJAX requests.
+     *
+     * Key steps:
+     * - Validates the presence of required parameters (identifier and repository ID).
+     * - Loads configuration settings for database connection and additional options such as history saving.
+     * - Initializes the Shopware API fetcher to retrieve product data based on the identifier.
+     * - Creates an updater instance to perform the update operation.
+     * - Monitors the update process using the update log table to detect errors.
+     * - Responds appropriately based on the request type (AJAX or non-AJAX) and the presence of errors.
+     *
+     * Process assumptions:
+     * - The identifier and repository ID are required for proper product importation.
+     * - Private methods in the updater cannot be overridden, so error handling is performed externally.
+     * - History saving is enabled by default unless disabled in the configuration.
+     *
+     * Error handling:
+     * - If an error is detected post-update, an appropriate response (JSON or flash message) is returned.
+     * - The process ensures that appropriate HTTP headers and messages are sent based on the request method and result.
+     *
+     * Throws:
+     * - Redirects or exits in case of missing parameters or critical errors to prevent further execution.
+     *
+     * Response:
+     * - For AJAX requests: Returns a JSON response indicating success or failure.
+     * - For non-AJAX requests: Uses FlashMessage for user feedback and redirects to the import list.
+     */
     public function importOne(): void
     {
         $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
@@ -182,7 +234,30 @@ echo json_encode(['success' => false, 'message' => 'Produkt konnte nicht gefunde
 
 
     /**
-     * @throws GuzzleException
+     * Executes the full import process for products using the Shopware API and updates the database.
+     *
+     * This method orchestrates the process of importing products in bulk, transforming fetched data,
+     * and passing it to the updater for database synchronization. Additionally, it provides feedback
+     * to the user upon completion.
+     *
+     * Key steps:
+     * - Loads configuration settings for database and options (e.g., default repository ID and history saving).
+     * - Fetches and transforms product data from Shopware API using the fetcher instance.
+     * - Initializes the updater with the fetched data and executes the update routine.
+     * - Updates the user with the number of successfully imported products through flash messaging.
+     * - Redirects the user to the fullImport page or a predefined Tool view upon completion.
+     *
+     * Process assumptions:
+     * - Default repository ID is defined in the configuration and used for data operations.
+     * - History saving for imported data is enabled by default unless explicitly disabled in the configuration.
+     * - The updater instance processes and synchronizes all records provided, including transformed data.
+     *
+     * User feedback:
+     * - A flash message is displayed indicating the count of successfully imported products.
+     * - Performs a redirect to the tool's fullImport page upon successful completion.
+     *
+     * Response:
+     * - This method redirects to another view, making it unsuitable for direct AJAX handling.
      */
     public function run(): void
     {

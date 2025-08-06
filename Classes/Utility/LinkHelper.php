@@ -1,6 +1,12 @@
 <?php
 namespace RKW\OaiConnector\Utility;
 
+/**
+ * LinkHelper
+ *
+ * Provides utility methods to generate and render HTML links with customizable parameters
+ * and optional query inheritance.
+ */
 class LinkHelper
 {
     /**

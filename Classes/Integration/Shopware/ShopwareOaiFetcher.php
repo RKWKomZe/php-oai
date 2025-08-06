@@ -1,5 +1,4 @@
 <?php
-// === /Classes/Integration/Shopware/ShopwareOaiFetcher.php ===
 
 namespace RKW\OaiConnector\Integration\Shopware;
 
@@ -7,12 +6,20 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use RKW\OaiConnector\Utility\ConfigLoader;
 
+/**
+ * Class ShopwareOaiFetcher
+ *
+ * Handles communication and data transformation between the application and the Shopware API for OAI-related imports and product queries.
+ */
 class ShopwareOaiFetcher
 {
     private string $baseUrl;
     private string $clientId;
     private string $clientSecret;
 
+    /**
+     * constructor
+     */
     public function __construct()
     {
         $config = ConfigLoader::load();
@@ -24,12 +31,11 @@ class ShopwareOaiFetcher
 
 
     /**
-     * Used for OAI-Import
+     * Fetches and transforms a list of products based on the provided filter options.
      *
-     * @param array $filterOptions
-     * @param bool $returnRawDataArray
-     * @return array
-     * @throws GuzzleException
+     * @param array $filterOptions Options to filter the products.
+     * @param bool $returnRawDataArray Determines whether to return the raw product data array or transformed records.
+     * @return array The processed list of products, either raw or transformed.
      */
     public function fetchAndTransform(array $filterOptions = [], bool $returnRawDataArray = false): array
     {
@@ -49,11 +55,15 @@ class ShopwareOaiFetcher
 
 
     /**
-     * Fetch a single product by ID from Shopware API.
+     * Fetches a single product by its ID from the Shopware API.
      *
-     * @param string $productId
-     * @return array
-     * @throws GuzzleException
+     * This method retrieves product details using the Shopware API with admin rights,
+     * specifying necessary associations and transformations. For local DDEV environments,
+     * SSL verification is disabled. In case no result is returned from the API, an exception is thrown.
+     *
+     * @param string $productId The unique identifier of the product to fetch.
+     * @return array An array containing the transformed product data.
+     * @throws \RuntimeException|GuzzleException If the Shopware API returns an empty result for the provided product ID.
      */
     public function fetchSingleById(string $productId): array
     {
@@ -106,8 +116,10 @@ class ShopwareOaiFetcher
 
 
     /**
-     * @param array $product
-     * @return array
+     * Transforms a product array into a standardized format.
+     *
+     * @param array $product The product data to transform.
+     * @return array The transformed product data.
      */
     protected function transformProduct(array $product): array
     {
@@ -126,7 +138,9 @@ class ShopwareOaiFetcher
 
 
     /**
-     * @return string
+     * Fetches an access token from the API using client credentials.
+     *
+     * @return string The access token or an empty string if retrieval fails.
      */
     private function fetchAccessToken(): string
     {
@@ -152,10 +166,13 @@ class ShopwareOaiFetcher
 
 
     /**
-     * @param string $accessToken
-     * @param array $filterOptions
-     * @return array
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * Fetches products from the API by applying filters and pagination options.
+     *
+     * @param string $accessToken The access token used for authentication with the API.
+     * @param array $filterOptions An array of filter options for fetching products, such as date ranges.
+     *
+     * @return array The decoded JSON response containing the list of products.
+     * @throws GuzzleException
      */
     protected function fetchProducts(string $accessToken, array $filterOptions): array
     {

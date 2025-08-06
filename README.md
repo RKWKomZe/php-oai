@@ -1,6 +1,6 @@
 # RKW OAI-PMH Connector
 
-This project connects (amon others) a Shopware system to an OAI-PMH server. It is a deliberately minimal PHP project without a full framework but with a modern structure and Composer support.
+This project connects (among others) a Shopware system to an OAI-PMH server. It is a deliberately minimal PHP project without a full framework, but with a modern structure and Composer support.
 
 
 ## Setup
@@ -12,7 +12,7 @@ Clone project:
 ```
 git clone git@github.com:RKWKomZe/php-oai.git .
 
-ddev config (with everything default)
+ddev config (When prompted, press Enter for all options to accept the default values)
 
 ddev get ddev/ddev-phpmyadmin
 
@@ -39,6 +39,10 @@ SHOPWARE_BASE_URL=https://ddev-rkw-shopware-web
 SHOPWARE_CLIENT_ID=SWIABHK5R0FNOWVPQK1FTMFQDW
 SHOPWARE_CLIENT_SECRET=STJaY1pCSkVaQ3JqUU43dmJ4SHpmZVVrN1pzNWJvSWlhazNuSFY
 ```
+Hint: In the example .env file, a local Shopware instance was set up on a standalone DDEV. Instructions for this can be found further down in the documentation.
+
+
+
 ### Add the database
 Add database:
 ```
@@ -290,7 +294,7 @@ $entries = $repo->findBy(['active' => 1], ['created_at' => 'DESC'], $pagination)
 
 
 ## OPTIONAL: Create your local shopware project for test-purposes
-### Create a new network to wire both projects:
+Create a new network to wire both projects:
 ```
 docker network create rkw-sharednet
 ```
@@ -351,7 +355,7 @@ After login use configuration popup for your quickstart:
 * Click on **Add integration** button
 * Form values:
   * Name: "RKW OAI Connector"
-  * Administration ON (needed for single queries!)
+  * Administration ON (needed for single record queries!)
   * SAVE THE SHOWN KEYS (!) and put them into the .env file of the **rkw-oaipmh** project
   * "Save integration" (button)
 
