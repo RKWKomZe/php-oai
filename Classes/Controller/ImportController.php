@@ -7,11 +7,13 @@ use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiFetcher;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiUpdater;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
+use RKW\OaiConnector\Repository\OaiMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * ImportController
@@ -24,6 +26,8 @@ class ImportController extends AbstractController
 
     private ?OaiRepoRepository $repoRepository = null;
 
+    private ?OaiMetaRepository $oaiMetaRepository = null;
+
     protected function getOaiItemMetaRepository(): OaiItemMetaRepository
     {
         return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
@@ -32,6 +36,11 @@ class ImportController extends AbstractController
     protected function getRepoRepository(): OaiRepoRepository
     {
         return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);
+    }
+
+    protected function getOaiMetaRepository(): OaiMetaRepository
+    {
+        return $this->oaiMetaRepository ??= new OaiMetaRepository($this->settings['oai']['defaultRepoId']);
     }
 
 
@@ -43,6 +52,7 @@ class ImportController extends AbstractController
         parent::__construct();
         $this->oaiItemMetaRepository = $this->getOaiItemMetaRepository();
         $this->repoRepository = $this->getRepoRepository();
+        $this->oaiMetaRepository = $this->getOaiMetaRepository();
     }
 
 
@@ -83,14 +93,28 @@ class ImportController extends AbstractController
 
         $repoList = $this->repoRepository->withModels()->findAll();
 
+        $metadataPrefixList = $this->oaiMetaRepository->withModels()->findAll();
+
+        $metadataPrefixListSorted = [];
+        foreach ($metadataPrefixList as $metadataPrefix) {
+            $repoId = $metadataPrefix->getRepo();
+            $metadataPrefixListSorted[$repoId] ??= [];
+            $metadataPrefixListSorted[$repoId][$metadataPrefix->getMetadataPrefix()] = $metadataPrefix->getMetadataPrefix();
+        }
+
+    //    VarDumper::dump($metadataPrefixListSorted); exit;
+
         if (!count($repoList)) {
             FlashMessage::add('No repositories found. Import not possible. Please create an OAI-Repo first.', FlashMessage::TYPE_DANGER);
         }
 
+        // @toDo: Was für ein Überbleibsel ist die Zeile "?? ($array[0]['id'] ?? null)"?
         $activeRepoId = $_GET['repo']
             ?? ($array[0]['id'] ?? null)
             ?? $this->settings['oai']['defaultRepoId'];
 
+        $activeMetadataPrefix = $_GET['metadataPrefix']
+            ?? array_values($metadataPrefixListSorted[$activeRepoId])[0] ?? null;
 
         $shopwareIds = array_column($dataRequest['data'], 'id'); // z. B. ['abc123', 'def456', ...]
         $prefixedIds = array_map(fn($id) => "oai:$activeRepoId:" . $id, $shopwareIds);
@@ -109,7 +133,9 @@ class ImportController extends AbstractController
             'productList' => $dataRequest['data'],
             'existingIdentifiers' => $existingIdentifiers,
             'repoList' => $repoList,
+            'metadataPrefixListSorted' => $metadataPrefixListSorted,
             'activeRepoId' => $activeRepoId,
+            'activeMetadataPrefix' => $activeMetadataPrefix,
             'fromDate' => $fromDate->format('Y-m-d'),
             'untilDate' => $untilDate->format('Y-m-d'),
             'limit' => $limit,
@@ -156,6 +182,7 @@ class ImportController extends AbstractController
 
         $identifier = $_GET['id'] ?? null;
         $repoId = $_GET['repo'] ?? null;
+        $metadataPrefix = $_GET['metadataPrefix'] ?? null;
 
         if (!$identifier || !$repoId) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
@@ -167,11 +194,11 @@ class ImportController extends AbstractController
         $dbConfig = $config['database'];
         $saveHistory = $config['oai']['save_history'] ?? true;
 
-        // 1. Produkte via Shopware-API holen
+        // 1. Fetch products via Shopware-API
         $fetcher = new ShopwareOaiFetcher();
         $records = $fetcher->fetchSingleById($identifier);
 
-        // 2. An OAI Updater übergeben
+        // 2. Passed to OAI Updater
         $updater = new ShopwareOaiUpdater(
             $dbConfig['host'],
             $dbConfig['user'],
@@ -189,7 +216,7 @@ class ImportController extends AbstractController
         $lastLogId = (int) $pdo->query('SELECT MAX(id) FROM oai_update_log')->fetchColumn();
 
         // do the update run
-        $updater->run();
+        $updater->run(['all'], [$metadataPrefix]);
 
         // check for errors
         $stmt = $pdo->prepare('

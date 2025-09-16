@@ -2,6 +2,8 @@
 
 namespace RKW\OaiConnector\Integration\Shopware;
 
+use Symfony\Component\VarDumper\VarDumper;
+
 /**
  * Class ShopwareOaiUpdater
  *
@@ -197,6 +199,12 @@ class ShopwareOaiUpdater extends \Oai_Updater
      */
     public function metadata($f, $metadataPrefix): string
     {
+
+        // Hint: The $f product array is build in ShopwareOaiUpdater->transformProduct()
+
+        /*
+        var_dump($metadataPrefix); exit;
+
         $xml = <<<XML
 <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
            xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -208,7 +216,19 @@ class ShopwareOaiUpdater extends \Oai_Updater
     <dc:description>{$this->xmlEscape($f['description'])}</dc:description>
 </oai_dc:dc>
 XML;
+
+
         return $xml;
+        */
+
+        switch (strtolower($metadataPrefix)) {
+            case 'oai_dc':
+                return $this->renderDublinCore($f);
+            case 'marcxml':
+            default:
+                return $this->renderMarcXml($f);
+        }
+
     }
 
 
@@ -336,11 +356,9 @@ XML;
      */
     public function metadataPrefixArray()
     {
-        // @toDo: dynamische Rückgabe
-
-
-        return ['oai_dc'];
-        #return ['marcxml'];
+        // Just a mindless default return. We can pass the value manually when calling ->run in ImportController.
+        // for the "Deutsche Nationalbibliothek" we want to use marcxml
+        return ['marcxml'];
     }
 
 
@@ -382,6 +400,354 @@ XML;
             }
         }
         return null;
+    }
+
+
+
+    /**
+     * Render Dublin Core (oai_dc).
+     * Namespace & schema per OAI-DC guidelines.
+     *
+     * @deprecated: DublinCore is not used yet!
+     */
+    private function renderDublinCore(array $f): string
+    {
+        $doc = new \DOMDocument('1.0', 'UTF-8');
+        $doc->formatOutput = false;
+
+        $dc = $doc->createElementNS('http://www.openarchives.org/OAI/2.0/oai_dc/', 'oai_dc:dc');
+        $dc->setAttributeNS(
+            'http://www.w3.org/2001/XMLSchema-instance',
+            'xsi:schemaLocation',
+            'http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd'
+        );
+        // Add the DC namespace
+        $dc->setAttribute('xmlns:dc', 'http://purl.org/dc/elements/1.1/');
+        $doc->appendChild($dc);
+
+        // dc:title
+        if ($f['title'] !== '') {
+            $dc->appendChild($doc->createElement('dc:title', $f['title']));
+        }
+
+        // dc:identifier (prefer explicit identifier, fallback to URL)
+        $identifier = $f['identifier'] ?: $f['url'];
+        if ($identifier !== '') {
+            $dc->appendChild($doc->createElement('dc:identifier', $identifier));
+        }
+
+        // dc:description
+        if ($f['description'] !== '') {
+            $dc->appendChild($doc->createElement('dc:description', $f['description']));
+        }
+
+        // dc:creator (repeatable)
+        foreach ((array)$f['creators'] as $creator) {
+            if ($creator !== '') {
+                $dc->appendChild($doc->createElement('dc:creator', $creator));
+            }
+        }
+
+        // dc:subject (repeatable)
+        foreach ((array)$f['subjects'] as $subject) {
+            if ($subject !== '') {
+                $dc->appendChild($doc->createElement('dc:subject', $subject));
+            }
+        }
+
+        // dc:date (ISO is fine)
+        if (!empty($f['date'])) {
+            $dc->appendChild($doc->createElement('dc:date', $f['date']));
+        }
+
+        // dc:language (BCP47 like "de" or ISO 639-2 like "deu")
+        if (!empty($f['language'])) {
+            $dc->appendChild($doc->createElement('dc:language', $f['language']));
+        }
+
+        // Return only the <oai_dc:dc> subtree (no XML declaration)
+        return $doc->saveXML($dc);
+    }
+
+
+
+    /**
+     * Render MARCXML (slim schema) incl. bundle relations and category handling.
+     * - 001 control number
+     * - 245$a title
+     * - 520$a description (prefers custom_meta_covertext)
+     * - 264$c year (from datestamp)
+     * - 856$u URLs (page + download fields)
+     * - 773 (child -> parent from custom_bundles_parent)
+     * - 774 (parent -> children from custom_bundles_products)
+     * - 690$a local subject for raw category ID
+     * - 650$a topical term if a human-readable category name is available
+     */
+    private function renderMarcXml(array $f): string
+    {
+        $doc = new \DOMDocument('1.0', 'UTF-8');
+        $doc->formatOutput = false;
+
+        // Helper closures (kept local; lift to methods if you prefer)
+        $toOaiId = function (?string $uuid): string {
+            $uuid = trim((string)$uuid);
+            return $uuid !== '' ? 'oai:rkw:shopware:' . $uuid : '';
+        };
+        $parseIdList = function (?string $raw) : array {
+            if (!$raw) return [];
+            $parts = preg_split('/[\s,;]+/', trim($raw));
+            $parts = array_filter(array_map('trim', (array)$parts), fn($v) => $v !== '');
+            return array_values(array_unique($parts));
+        };
+
+        $cf = $f['customFields'] ?? [];
+
+        // <record xmlns="http://www.loc.gov/MARC21/slim">
+        $record = $doc->createElementNS('http://www.loc.gov/MARC21/slim', 'record');
+        $doc->appendChild($record);
+
+        // <leader> — adapt to your material type if needed
+        $leader = $doc->createElement('leader', '00000nam a2200000 a 4500');
+        $record->appendChild($leader);
+
+        // 001 Controlfield: stable control number (prefer explicit identifier, else URL)
+        $id = ($f['identifier'] ?? '') ?: ($f['url'] ?? '');
+        if ($id !== '') {
+            $cf001 = $doc->createElement('controlfield', $id);
+            $cf001->setAttribute('tag', '001');
+            $record->appendChild($cf001);
+        }
+
+        // 245 Title statement
+        if (!empty($f['title'])) {
+            $df245 = $doc->createElement('datafield');
+            $df245->setAttribute('tag', '245');
+            $df245->setAttribute('ind1', '1'); // "1" often used when there's a 1XX main entry
+            $df245->setAttribute('ind2', '0');
+
+            $sfA = $doc->createElement('subfield', $f['title']);
+            $sfA->setAttribute('code', 'a');
+            $df245->appendChild($sfA);
+
+            $record->appendChild($df245);
+        }
+
+        // 520 Summary/Abstract (prefer custom cover text)
+        $description = ($cf['custom_meta_covertext'] ?? '') ?: ($f['description'] ?? '');
+        if ($description !== '') {
+            $df520 = $doc->createElement('datafield');
+            $df520->setAttribute('tag', '520');
+            $df520->setAttribute('ind1', ' ');
+            $df520->setAttribute('ind2', ' ');
+
+            $sfA = $doc->createElement('subfield', $description);
+            $sfA->setAttribute('code', 'a');
+            $df520->appendChild($sfA);
+
+            $record->appendChild($df520);
+        }
+
+        // 264 Publication year (from datestamp YYYY…)
+        if (!empty($f['datestamp'])) {
+            $year = substr((string)$f['datestamp'], 0, 4);
+            if (ctype_digit($year)) {
+                $df264 = $doc->createElement('datafield');
+                $df264->setAttribute('tag', '264');
+                $df264->setAttribute('ind1', ' ');
+                $df264->setAttribute('ind2', '1'); // 1 = publication
+                $sfC = $doc->createElement('subfield', $year);
+                $sfC->setAttribute('code', 'c');
+                $df264->appendChild($sfC);
+                $record->appendChild($df264);
+            }
+        }
+
+        // 856 Electronic locations (product page URL + optional downloads)
+        $urls = [];
+        if (!empty($f['url'])) {
+            $urls[] = (string)$f['url'];
+        }
+        if (!empty($cf['custom_download_'])) {
+            $urls[] = (string)$cf['custom_download_'];
+        }
+        if (!empty($cf['custom_bundle_file'])) {
+            $urls[] = (string)$cf['custom_bundle_file'];
+        }
+        foreach (array_unique($urls) as $u) {
+            if ($u === '') continue;
+            $df856 = $doc->createElement('datafield');
+            $df856->setAttribute('tag', '856');
+            $df856->setAttribute('ind1', '4'); // 4 = HTTP
+            $df856->setAttribute('ind2', '0');
+            $sfU = $doc->createElement('subfield', $u);
+            $sfU->setAttribute('code', 'u');
+            $df856->appendChild($sfU);
+            $record->appendChild($df856);
+        }
+
+        // === Bundle relations ===
+        // Child -> Parent (773)
+        $parentUuid = trim((string)($cf['custom_bundles_parent'] ?? ''));
+        if ($parentUuid !== '') {
+            $df773 = $doc->createElement('datafield');
+            $df773->setAttribute('tag', '773');
+            $df773->setAttribute('ind1', ' ');
+            $df773->setAttribute('ind2', ' ');
+            $sfW = $doc->createElement('subfield', $toOaiId($parentUuid)); // related record ID
+            $sfW->setAttribute('code', 'w'); // "w" = control number of related record
+            $df773->appendChild($sfW);
+            $record->appendChild($df773);
+        }
+
+        // Parent -> Children (774)
+        $isBundleActive = !empty($cf['custom_bundles_active']);
+        $childrenRaw    = (string)($cf['custom_bundles_products'] ?? '');
+        $children       = $parseIdList($childrenRaw);
+        if ($isBundleActive && !empty($children)) {
+            foreach ($children as $kidUuid) {
+                $df774 = $doc->createElement('datafield');
+                $df774->setAttribute('tag', '774');
+                $df774->setAttribute('ind1', ' ');
+                $df774->setAttribute('ind2', ' ');
+                $sfW = $doc->createElement('subfield', $toOaiId($kidUuid));
+                $sfW->setAttribute('code', 'w');
+                $df774->appendChild($sfW);
+                $record->appendChild($df774);
+            }
+        }
+
+        // === Category handling (multiple) ===
+        // We expect $f['categoryIds'] as array of UUIDs (strings). Optional: $f['categoryNamesById'] as [uuid => name].
+        $categoryIds        = array_values(array_filter((array)($f['categoryIds'] ?? []), fn($v) => trim((string)$v) !== ''));
+        $categoryNamesById  = (array)($f['categoryNamesById'] ?? []); // optional map UUID -> human-readable name
+
+        // 690: write raw internal IDs (local subject) – one field per ID
+        foreach ($categoryIds as $catId) {
+            $df690 = $doc->createElement('datafield');
+            $df690->setAttribute('tag', '690'); // local subject added entry
+            $df690->setAttribute('ind1', ' ');
+            $df690->setAttribute('ind2', ' ');
+            $sfA = $doc->createElement('subfield', (string)$catId);
+            $sfA->setAttribute('code', 'a');
+            $df690->appendChild($sfA);
+            $record->appendChild($df690);
+        }
+
+        /*
+        // If you also have a human-readable category name, map that to 650$a.
+        if (!empty($f['categoryName'])) {
+            $df650 = $doc->createElement('datafield');
+            $df650->setAttribute('tag', '650'); // topical term
+            $df650->setAttribute('ind1', ' ');
+            $df650->setAttribute('ind2', '7'); // "7" = source specified in $2 (optional)
+            $sfA = $doc->createElement('subfield', (string)$f['categoryName']);
+            $sfA->setAttribute('code', 'a');
+            $df650->appendChild($sfA);
+            // Optional: specify your source vocabulary in $2, e.g. "shopware"
+            $sf2 = $doc->createElement('subfield', 'shopware');
+            $sf2->setAttribute('code', '2');
+            $df650->appendChild($sf2);
+
+            $record->appendChild($df650);
+        }
+        */
+
+
+        /*
+       // 100 / 700 Creators (very rough mapping; refine to your cataloging rules)
+       // 100 is "Main Entry—Personal Name"; 700 additional entries. If multiple, you might pick the first as 100.
+       $creators = array_values(array_filter((array)$f['creators'], fn($c) => trim((string)$c) !== ''));
+       if (!empty($creators)) {
+           // First creator as 100
+           $df100 = $doc->createElement('datafield');
+           $df100->setAttribute('tag', '100');
+           $df100->setAttribute('ind1', '1');
+           $df100->setAttribute('ind2', ' ');
+           $sfA = $doc->createElement('subfield', $creators[0]);
+           $sfA->setAttribute('code', 'a');
+           $df100->appendChild($sfA);
+           $record->appendChild($df100);
+
+           // Remaining as 700
+           for ($i = 1; $i < count($creators); $i++) {
+               $df700 = $doc->createElement('datafield');
+               $df700->setAttribute('tag', '700');
+               $df700->setAttribute('ind1', '1');
+               $df700->setAttribute('ind2', ' ');
+               $sfA = $doc->createElement('subfield', $creators[$i]);
+               $sfA->setAttribute('code', 'a');
+               $df700->appendChild($sfA);
+               $record->appendChild($df700);
+           }
+       }
+       */
+
+        /*
+        // 650 Subjects (topical terms)
+        foreach ((array)$f['subjects'] as $subject) {
+            if ($subject !== '') {
+                $df650 = $doc->createElement('datafield');
+                $df650->setAttribute('tag', '650');
+                $df650->setAttribute('ind1', ' ');
+                $df650->setAttribute('ind2', '0'); // 0 = LCSH; adjust if you have another vocabulary
+                $sfA = $doc->createElement('subfield', $subject);
+                $sfA->setAttribute('code', 'a');
+                $df650->appendChild($sfA);
+                $record->appendChild($df650);
+            }
+        }
+        */
+
+        /*
+        // 041 Language (optional, very rough; "deu" preferred in MARC; if you have 2-letter, map to 3-letter code)
+        if (!empty($f['language'])) {
+            $lang = $this->toMarcLang($f['language']); // crude helper below
+            if ($lang !== '') {
+                $df041 = $doc->createElement('datafield');
+                $df041->setAttribute('tag', '041');
+                $df041->setAttribute('ind1', ' ');
+                $df041->setAttribute('ind2', ' ');
+                $sfA = $doc->createElement('subfield', $lang);
+                $sfA->setAttribute('code', 'a');
+                $df041->appendChild($sfA);
+                $record->appendChild($df041);
+            }
+        }
+        */
+
+
+
+        // Return only the <record> subtree (no XML declaration)
+        return $doc->saveXML($record);
+    }
+
+
+
+    /**
+     * Very small helper to map 2-letter to 3-letter MARC language codes where possible.
+     * Extend this mapping to your needs or feed proper ISO 639-2 codes directly.
+     */
+    private function toMarcLang(string $lang): string
+    {
+        $lang = strtolower(trim($lang));
+        // Simple common mappings; extend as needed
+        $map = [
+            'de' => 'deu',
+            'en' => 'eng',
+            'fr' => 'fre', // or 'fra' depending on your cataloging choice
+            'es' => 'spa',
+            'it' => 'ita',
+            'nl' => 'dut', // or 'nld'
+            'sv' => 'swe',
+        ];
+        if (isset($map[$lang])) {
+            return $map[$lang];
+        }
+        // If already 3 letters, pass through
+        if (strlen($lang) === 3) {
+            return $lang;
+        }
+        return '';
     }
 
 

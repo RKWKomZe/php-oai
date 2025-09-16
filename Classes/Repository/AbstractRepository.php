@@ -85,10 +85,10 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      */
     public function findAll(): array
     {
-        // Bevorzugt explizit übergebenes Argument, ansonsten temporären Zustand
+        // Prefer explicitly passed argument, otherwise temporary state
         $pagination = $this->tempPagination;
 
-        // Danach zurücksetzen, um Seiteneffekte zu vermeiden
+        // Reset afterwards to avoid side effects
         $this->tempPagination = null;
 
         $whereClauses = [];

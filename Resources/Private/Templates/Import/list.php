@@ -16,7 +16,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
 
 ?>
 
-<h1 class="mb-4">Shopware Produktliste</h1>
+<h1 class="mb-4">Shopware Productlist</h1>
 
 <div class="alert alert-info" role="alert">
     <strong>Note:</strong> The product list below is retrieved directly from the Shopware API.
@@ -36,6 +36,11 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     </div>
 </div>
 
+<div class="alert alert-light" role="alert">
+    <strong>Connected to:</strong>
+    <?php echo $config['api']['shopware']['baseUrl']; ?>
+</div>
+
 <form method="get" class="row g-3 mb-4">
     <input type="hidden" name="controller" value="Import">
     <input type="hidden" name="action" value="list">
@@ -53,14 +58,25 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     </div>
 
     <div class="col-auto">
-        <label for="from" class="form-label">From:</label>
+        <label for="metadataPrefix" class="form-label">Metadata Prefix:</label>
+        <select name="metadataPrefix" id="metadataPrefix" class="form-select">
+            <?php foreach ($metadataPrefixListSorted[$activeRepoId] as $metadataPrefix): ?>: ?>
+                <option value="<?= $metadataPrefix ?>" <?= $metadataPrefix === $activeMetadataPrefix ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($metadataPrefix) ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+
+    <div class="col-auto">
+        <label for="from" class="form-label"><strong>From:</strong></label>
         <input type="date" id="from" name="from"
                value="<?= htmlspecialchars($fromDate ?? '') ?>"
                class="form-control">
     </div>
 
     <div class="col-auto">
-        <label for="until" class="form-label">Until:</label>
+        <label for="until" class="form-label"><strong>Until:</strong></label>
         <input type="date" id="until" name="until"
                value="<?= htmlspecialchars($untilDate ?? '') ?>"
                class="form-control">
@@ -104,12 +120,13 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
         <div class="row g-0">
             <div class="col-md-2 pt-4 text-center">
                 <?php if (!empty($product['cover']['media']['url'])): ?>
-                    <?php if (!empty($config['environment'] === 'development')): ?>
+                    <?php /* if (!empty($config['environment'] === 'development')): ?>
                         <!-- for testing purpose: The api-URL is a container URL. We need the real ddev URL -->
                         <img src="<?= htmlspecialchars(LocalTestStuff::fixShopwareMediaUrl($product['cover']['media']['url'])) ?>" class="img-fluid rounded-start" alt="Produktbild">
                     <?php else: ?>
                         <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
-                    <?php endif; ?>
+                    <?php endif; */ ?>
+                    <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
                 <?php else: ?>
                     <div class="text-muted mt-4">No image</div>
                 <?php endif; ?>
@@ -124,14 +141,15 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                             'importOne',
                             [
                                 'id' => $product['id'],
-                                'repo' => $activeRepoId
+                                'repo' => $activeRepoId,
+                                'metadataPrefix' => $activeMetadataPrefix
                             ],
                             'Approve',
                             [
                                 'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button',
                                 //'onclick' => 'return confirm("Are you sure you want to import this record?")',
                                 'data-product-id' => $product['id'],
-                                'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=shopware',
+                                'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
                             ]);
                         ?>
                     <?php else:
@@ -143,14 +161,15 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                 'importOne',
                                 [
                                     'id' => $product['id'],
-                                    'repo' => $activeRepoId
+                                    'repo' => $activeRepoId,
+                                    'metadataPrefix' => $activeMetadataPrefix
                                 ],
                                 'Re-Import',
                                 [
                                     'class' => 'btn btn-sm btn-secondary import-button',
                                     //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
                                     'data-product-id' => $product['id'],
-                                    'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=shopware',
+                                    'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix
 
                                 ]);
                             ?>

@@ -107,7 +107,7 @@ $returnTo = $_GET['returnTo'] ?? null;
                 <ul class="mb-0">
                     <li><strong>Repository Identifier:</strong> The combination of <code>repositoryName</code> and <code>baseURL</code> should be globally unique and must not change later.</li>
                     <li><strong>Base URL:</strong> Ensure that the baseURL points to the OAI-PMH endpoint (e.g. <code>https://example.org/oai</code>). It must be publicly accessible for harvesters.</li>
-                    <li><strong>Metadata Formats:</strong> Make sure that the repository actually supports the expected metadata formats like <code>oai_dc</code> or <code>marc21</code>. You can verify this using the <code>?verb=ListMetadataFormats</code> endpoint.</li>
+                    <li><strong>Metadata Formats:</strong> Make sure that the repository actually supports the expected metadata formats like <code>oai_dc</code> or <code>marcXml</code>. You can verify this using the <code>?verb=ListMetadataFormats</code> endpoint.</li>
                     <li><strong>Duplicate entries:</strong> Avoid creating repositories for the same endpoint multiple times unless you're managing different configurations intentionally.</li>
                 </ul>
             </div>

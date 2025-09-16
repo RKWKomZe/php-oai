@@ -3,6 +3,7 @@
 namespace RKW\OaiConnector\Service;
 
 use RKW\OaiConnector\Utility\ConfigLoader;
+use Symfony\Component\VarDumper\VarDumper;
 
 
 /**
@@ -38,17 +39,24 @@ class OaiService
 
         defined('OAI_DEBUG') || define('OAI_DEBUG', $config['environment'] === 'development' ? 1 : 0);
 
-        // Whitelist erlaubter OAI-PMH-Parameter
+        // Whitelist of permitted OAI-PMH parameters
         $allowedParams = [
             'verb', 'identifier', 'metadataPrefix', 'from', 'until', 'set', 'resumptionToken'
         ];
 
-        // repo darfst du intern nutzen, aber nicht an den OAI-Endpunkt geben
+        // You may use repo internally, but do not pass it to the OAI endpoint.
         $repo = $_GET['repo'] ?? $config['oai']['defaultRepoId'];
 
-        // $_GET temporär filtern
+        // $_GET temporary filter
         $_GET = array_intersect_key($_GET, array_flip($allowedParams));
 
+        // To ensure that today's records can also be found when the "until" date is set to today's date
+        $tz = new \DateTimeZone('Europe/Berlin');
+        if ($_GET['until'] !== null) {
+            $tmp = new \DateTime($_GET['until'] . ' 00:00:00', $tz);
+            $tmp->modify('+1 day');
+            $_GET['until'] = $tmp->format('Y-m-d'); // bump one day to emulate end-of-day
+        }
 
         \Oai::execRequest(
             $dbConfig['host'],

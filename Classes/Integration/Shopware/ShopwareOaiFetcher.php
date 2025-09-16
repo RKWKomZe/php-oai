@@ -5,6 +5,7 @@ namespace RKW\OaiConnector\Integration\Shopware;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use RKW\OaiConnector\Utility\ConfigLoader;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Class ShopwareOaiFetcher
@@ -123,6 +124,7 @@ class ShopwareOaiFetcher
      */
     protected function transformProduct(array $product): array
     {
+
         $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
         $description = $product['translated']['description'] ?? '';
         $createdAt = $product['createdAt'] ?? date('Y-m-d');
@@ -132,7 +134,12 @@ class ShopwareOaiFetcher
             'datestamp' => $createdAt,
             'title' => $title,
             'description' => $description,
-            'url' => $this->baseUrl . "/detail/{$product['id']}"
+            'url' => $this->baseUrl . "/detail/{$product['id']}",
+
+            'productNumber' => $product['productNumber'] ?? '',
+            'releaseDate' => $product['releaseDate'] ?? '',
+            'categoryIds' => $product['categoryIds'] ?? [],
+            'customFields' => $product['customFields'] ?? [],
         ];
     }
 
