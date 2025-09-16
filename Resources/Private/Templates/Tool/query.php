@@ -5,10 +5,6 @@ $oneMonthAgo = (new DateTime('-1 month'))->format('Y-m-d');
 
 <h1 class="mb-4">Endpoint Queries</h1>
 
-<div class="alert alert-info" role="alert">
-    <strong>Note:</strong> Because the until parameter is interpreted as midnight at the start of the given date, records added later that day may be excluded. To retrieve them, use the next day as your until date.
-</div>
-
 <div class="row">
     <div class="col-md-6">
         <form id="oaiQueryForm" method="get" action="/index.php" target="_blank" class="border p-3 rounded bg-light">
