@@ -1,0 +1,28 @@
+*.log
+.DS_Store
+# .bowerrc
+.build
+.buildpath
+.bundle
+.editorconfig
+.gitignore
+.git*
+.idea
+# .node-version
+.project
+.settings
+# Capfile
+# Gemfile*
+LICENSE.*
+README.*
+# Rakefile
+Readme.*
+# gulpfile.js
+# node_modules
+# package.json
+composer.json
+
+/.ddev
+/.dev
+/.surf
+/.scripts

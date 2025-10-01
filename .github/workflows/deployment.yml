@@ -1,0 +1,181 @@
+name: Deploy OAI-Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'master'
+#      - 'staging'
+
+env:
+  PHP_VERSION: '8.3'
+
+jobs:
+  prepare:
+    name: Build (Composer, package artifact)
+    runs-on: ubuntu-latest
+    outputs:
+      release_name: ${{ steps.set_release_name.outputs.release_name }}
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate composer.json/lock
+        run: composer validate --no-check-publish
+
+      - name: Set release name (ISO 8601)
+        id: set_release_name
+        run: echo "release_name=$(date -u +'%Y-%m-%dT%H-%M-%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --no-interaction --optimize-autoloader
+
+      - name: Show files before upload
+        run: |
+          echo "Listing root dir contents:"
+          ls -la ./
+          echo "Listing vendor dir contents:"
+          ls -la vendor/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          include-hidden-files: true
+          path: |
+            ./vendor/
+            ./composer.lock
+          #  ./.env
+
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+#      - name: Replace placeholders in config
+#        run: |
+#          config_file=config/system/additional.php
+#          sed -i "s|###DB_HOST###|${{ vars.DB_HOST }}|g" $config_file || true
+#          sed -i "s|###DB_NAME###|${{ vars.DB_NAME }}|g" $config_file || true
+#          sed -i "s|###DB_USER###|${{ vars.DB_USER }}|g" $config_file || true
+#          sed -i "s|###DB_PASSWORD###|${{ secrets.DB_PASSWORD }}|g" $config_file || true
+#          sed -i "s|###SMTP_USER###|${{ vars.SMTP_USER }}|g" $config_file || true
+#          sed -i "s|###SMTP_HOST###|${{ vars.SMTP_HOST }}|g" $config_file || true
+#          sed -i "s|###SMTP_PASSWORD###|${{ secrets.SMTP_PASSWORD }}|g" $config_file || true
+
+      - name: Setup SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create release directory on server
+        run: ssh -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "mkdir -p ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}"
+
+      - name: Deploy via rsync
+        run: |
+          rsync -az --delete \
+            --exclude-from=$GITHUB_WORKSPACE/.deploy-exclude \
+            ./ \
+            ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }}:${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}/
+
+      - name: Create .env on server       # ?? vars.DEPLOY_PATH fehlt mir + DB_HOST + DB_NAME
+        run: |
+          ssh ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} bash -lc "
+            cat > ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}/.env <<'EOF'          
+            APP_ENV=${{ vars.APP_ENV }}
+            APP_DEBUG=${{ vars.APP_DEBUG }}
+            APP_URL=${{ vars.APP_URL }}
+            DB_HOST=${{ vars.DB_HOST }}
+            DB_NAME=${{ vars.DB_NAME }}
+            DB_USER=${{ vars.DB_USER }}
+            DB_PASS=${{ secrets.DB_PASS }}
+            SHOPWARE_BASE_URL=${{ vars.SHOPWARE_BASE_URL }}
+            SHOPWARE_CLIENT_ID=${{ secrets.SHOPWARE_CLIENT_ID }}
+            SHOPWARE_CLIENT_SECRET=${{ secrets.SHOPWARE_CLIENT_SECRET }}
+            EOF
+          "
+
+      - name: Create shared symlinks and create missing folders
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "
+            set -e
+            release_dir='${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}'
+            shared_dir='${{ vars.DEPLOY_PATH }}/shared'
+            deploy_file=\"\$release_dir/.deploy-shared\"
+          
+            if [[ ! -f \"\$deploy_file\" ]]; then
+              echo 'No .deploy-shared file found. Skipping symlinks.'
+              exit 0
+            fi
+          
+            while IFS=',' read -r source target; do
+              source=\$(echo \"\$source\" | xargs)
+              target=\$(echo \"\$target\" | xargs)
+          
+              target_path=\"\$release_dir/\$target\"
+              source_path=\"\$shared_dir/\$source\"
+          
+              mkdir -p \"\$source_path\"
+              mkdir -p \$(dirname \"\$target_path\")
+              ln -sfn \"\$source_path\" \"\$target_path\"
+            done < \"\$deploy_file\"
+          "
+
+      - name: Update project index public symlink
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} \
+            "ln -sfn ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}/Resources/Public ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}/web/Public"    
+
+      - name: Update current symlink
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} \
+            "ln -sfn ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }} ${{ vars.DEPLOY_PATH }}/current"
+
+  finalize:
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Setup SSH access
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
+
+#      - name: Fix ownership/permissions for runtime dirs (if you have any)
+#        run: |
+#          ssh ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} bash -lc '
+#            CURRENT="${{ vars.DEPLOY_PATH }}/current"
+#            # Adjust these only if you actually have such dirs:
+#            for d in logs cache storage; do
+#              [ -d "$CURRENT/$d" ] && chmod -R 755 "$CURRENT/$d"
+#            done
+#            # If your web/PHP user is known, you can also chown (uncomment and set user:group)
+#            # sudo chown -R www-data:www-data "$CURRENT" || true
+#          '
+
+      - name: Prune old releases (keep last 5)
+        run: |
+          ssh ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} bash -lc '
+            set -e
+            RELEASES="${{ vars.DEPLOY_PATH }}/releases"
+            cd "$RELEASES"
+            ls -1t | tail -n +6 | xargs -r -I{} rm -rf "{}"
+          '

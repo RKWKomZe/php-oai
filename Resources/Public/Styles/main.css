@@ -31,10 +31,10 @@ body {
 }
 
 
-/* pagination.css oder in deinem Hauptstylesheet */
+/* pagination.css or in your main stylesheet */
 
 .rkw-pagination .page-link {
-    color: #505050; /* Standard grau */
+    color: #505050; /* Standard grey */
 }
 
 .rkw-pagination .page-item.disabled .page-link {
@@ -78,7 +78,7 @@ body {
     pointer-events: none;
 }
 
-/* Schriftzug "Importiert" */
+/* Lettering "Imported" */
 .imported-label {
     position: absolute;
     top: 40%;
@@ -93,7 +93,7 @@ body {
     user-select: none;
 }
 
-/* Haken bleibt mittig */
+/* Hook remains centred */
 .check-icon {
     font-size: 4rem;
     color: #198754;
