@@ -1,6 +1,15 @@
 {
   "name": "rkw/oai-rkw",
   "description": "Integration von Shopware in cbisiere/oai-pmh Server",
+  "repositories": [
+    {
+      "type": "path",
+      "url": "packages/cbisiere/oai-pmh",
+      "options": {
+        "symlink": false
+      }
+    }
+  ],
   "require": {
     "cbisiere/oai-pmh": "*",
     "monolog/monolog": "^3.9",
