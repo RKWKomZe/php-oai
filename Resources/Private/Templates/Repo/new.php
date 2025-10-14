@@ -73,12 +73,12 @@ $returnTo = $_GET['returnTo'] ?? null;
 
             <div class="form-group">
                 <label for="maxListSize">Max List Size</label>
-                <input type="number" name="maxListSize" id="maxListSize" class="form-control" min="0" placeholder="e.g. 100">
+                <input type="number" name="maxListSize" id="maxListSize" class="form-control" min="0" placeholder="e.g. 100" required>
             </div>
 
             <div class="form-group">
                 <label for="tokenDuration">Token Duration (seconds)</label>
-                <input type="number" name="tokenDuration" id="tokenDuration" class="form-control" min="0" placeholder="e.g. 3600">
+                <input type="number" name="tokenDuration" id="tokenDuration" class="form-control" min="0" placeholder="e.g. 3600" required>
             </div>
 
             <div class="form-group">
@@ -131,7 +131,7 @@ $returnTo = $_GET['returnTo'] ?? null;
             let valid = true;
 
             if (granularity === 'YYYY-MM-DD' && !regexDate.test(datestamp)) {
-                alert("Please enter the datestamp in format YYYY-MM-DD.");
+                alert("Please enter the 'Earliest Datestamp' in format YYYY-MM-DD.");
                 valid = false;
             }
 

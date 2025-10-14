@@ -108,7 +108,6 @@ jobs:
             SHOPWARE_BASE_URL=${{ vars.SHOPWARE_BASE_URL }}
             SHOPWARE_CLIENT_ID=${{ secrets.SHOPWARE_CLIENT_ID }}
             SHOPWARE_CLIENT_SECRET=${{ secrets.SHOPWARE_CLIENT_SECRET }}
-            EOF
           "
 
       - name: Create shared symlinks and create missing folders

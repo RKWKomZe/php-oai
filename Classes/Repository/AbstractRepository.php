@@ -7,6 +7,7 @@ use PDOException;
 use RKW\OaiConnector\Mapper\GenericModelMapper;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\Pagination;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * AbstractRepository
@@ -231,9 +232,13 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             }
 
             $value = $model->$getter();
-            $columns[] = $name;
+
+            // escape column names with backticks to avoid reserved keyword conflicts
+            $escapedName = '`' . str_replace('`', '``', $name) . '`';
+
+            $columns[] = $escapedName;
             $placeholders[] = ':' . $name;
-            $updateClauses[] = "{$name} = :update_{$name}";
+            $updateClauses[] = "{$escapedName} = :update_{$name}";
 
             $values[$name] = $value;
             $values["update_{$name}"] = $value;
