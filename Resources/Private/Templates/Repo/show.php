@@ -67,7 +67,7 @@ echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&lar
     </tbody>
 </table>
 
-<?php if (isset($oaiRepoDescription) && !empty($oaiRepoDescription->getDescription())): ?>
+<?php if ($oaiRepoDescription && !empty($oaiRepoDescription->getDescription())): ?>
     <h5>Set Description (XML)</h5>
     <pre class="bg-light p-2 border"><?= htmlspecialchars($oaiRepoDescription->getDescription()) ?></pre>
 <?php endif; ?>
