@@ -90,7 +90,6 @@ class RepoController extends AbstractController
 
         $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
 
-
         // render view with model object
         $this->render('show', [
             'oaiRepo' => $oaiRepo,
