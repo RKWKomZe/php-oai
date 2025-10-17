@@ -1,3 +1,10 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
 
 <div class="col-md-6">
     <h1>Metadatenformat: <?= htmlspecialchars($oaiMeta->getMetadataPrefix()) ?></h1>
@@ -41,8 +48,5 @@
         </tr>
         </tbody>
     </table>
-
-    <a class="btn btn-secondary" href="?controller=meta&action=list">Zurück zur Übersicht</a>
-    <a class="btn btn-primary" href="?controller=meta&action=edit&repo=<?= urlencode($oaiMeta->getRepo()) ?>&metadataPrefix=<?= urlencode($oaiMeta->getMetadataPrefix()) ?>">Edit</a>
 
 </div>

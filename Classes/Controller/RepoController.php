@@ -117,7 +117,7 @@ class RepoController extends AbstractController
      * Provides feedback to the user regarding the success or failure of the operation
      * through flash messages and redirects accordingly.
      *
-     * @throws Exception If an error occurs during data mapping, insertion, or redirection.
+     * @throws Exception|\ReflectionException If an error occurs during data mapping, insertion, or redirection.
      */
     public function create(): void
     {
@@ -126,15 +126,16 @@ class RepoController extends AbstractController
         $oaiRepoDescription->setRepo($oaiRepo->getId());
 
         $oaiRepo->setUpdated(date('Y-m-d H:i:s'));
+        $oaiRepoDescription->setUpdated(date('Y-m-d H:i:s'));
 
         $success = $this->oaiRepoRepository->insert($oaiRepo);
 
         $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
 
-        // @toDo: Meldung auch für Description?
+        // @toDo: Meldung auch für oaiRepoDescription?
 
         if ($success) {
-            FlashMessage::add('Repository wurde erfolgreich erstellt. Dazu sollte im anschluss eine "OAI Meta" mit verknüpften Schema-Prefix (z.B. "oai_dc= angelegt werden.',  FlashMessage::TYPE_SUCCESS);
+            FlashMessage::add('Repository was successfully created. Next, an “OAI Meta” with linked schema prefix (e.g., “oai_dc”) should be created.',  FlashMessage::TYPE_SUCCESS);
             Redirect::to('show', 'Repo', ['id'  => $oaiRepo->getId()]);
         } else {
             FlashMessage::add('Repository could not be saved.',   FlashMessage::TYPE_DANGER);
@@ -191,11 +192,13 @@ class RepoController extends AbstractController
         $oaiRepoDescription->setRepo($oaiRepo->getId());
 
         $oaiRepo->setUpdated(date('Y-m-d H:i:s'));
+        $oaiRepoDescription->setUpdated(date('Y-m-d H:i:s'));
+
         $this->oaiRepoRepository->update($oaiRepo);
 
         $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
 
-        FlashMessage::add('Datensatz erfolgreich bearbeitet.', FlashMessage::TYPE_SUCCESS);
+        FlashMessage::add('Record successfully edited.', FlashMessage::TYPE_SUCCESS);
 
         Redirect::to('show', 'Repo', ['id' => $oaiRepo->getId()]);
     }
@@ -217,7 +220,7 @@ class RepoController extends AbstractController
 
         $this->oaiRepoRepository->delete($oaiRepo);
 
-        FlashMessage::add('Datensatz gelöscht.', FlashMessage::TYPE_SUCCESS);
+        FlashMessage::add('Record deleted.', FlashMessage::TYPE_SUCCESS);
 
         Redirect::to('list', 'Repo', ['id' => $oaiRepo->getId()]);
     }

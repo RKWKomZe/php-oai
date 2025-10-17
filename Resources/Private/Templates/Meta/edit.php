@@ -1,3 +1,11 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
+
 <h1>Edit metadata format</h1>
 
 <div class="col-md-6">
@@ -43,8 +51,17 @@
                       placeholder="z. B. Dublin Core Standardformat"><?= htmlspecialchars($oaiMeta->getComment()) ?></textarea>
         </div>
 
-        <a class="btn btn-secondary" href="?controller=meta&action=list">Abbrechen</a>
-        <button type="submit" class="btn btn-primary">Speichern</button>
+        <div class="d-flex justify-content-between">
+            <?php
+            echo LinkHelper::renderLink(
+                'Meta',
+                'list',
+                [],
+                'Cancel',
+                ['class' => 'btn btn btn-secondary']);
+            ?>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
     </form>
 </div>
 

@@ -1,11 +1,7 @@
 
-CREATE DATABASE IF NOT EXISTS `oai_repo`;
+CREATE DATABASE IF NOT EXISTS `db`;
 
-CREATE USER IF NOT EXISTS 'oai_user'@'localhost' IDENTIFIED BY 'demo';
-GRANT SELECT, INSERT, DELETE, UPDATE ON `oai_repo`.* TO 'oai_user'@'localhost';
-
-
-USE oai_repo
+USE db;
 
 CREATE TABLE IF NOT EXISTS `oai_repo` (
   `id` varchar(12) NOT NULL,

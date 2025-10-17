@@ -1,3 +1,11 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Set', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Create new Set</h1>
 </div>
@@ -48,8 +56,8 @@
             </div>
 
             <div class="d-flex justify-content-between">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <a class="btn btn-secondary" href="?controller=set&action=list">Cancel</a>
+                <a class="btn btn-secondary" href="?controller=set&action=list">Back</a>
+                <button type="submit" class="btn btn-primary">Create Set</button>
             </div>
         </form>
     </div>

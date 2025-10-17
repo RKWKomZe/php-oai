@@ -179,7 +179,8 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             $getter = 'get' . ucfirst($name);
 
             if (method_exists($model, $getter)) {
-                $columns[] = $name;
+                // ✅ Backtick-escape column names
+                $columns[] = '`' . $name . '`';
                 $placeholders[] = ':' . $name;
                 $values[$name] = $model->$getter();
             }
@@ -214,6 +215,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         if (empty($this->tableName)) {
             throw new \RuntimeException('No table name defined in repository.');
         }
+
 
         $reflection = new \ReflectionClass($model);
         $properties = $reflection->getProperties(\ReflectionProperty::IS_PRIVATE | \ReflectionProperty::IS_PROTECTED);

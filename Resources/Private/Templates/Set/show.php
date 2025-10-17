@@ -1,3 +1,11 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Set', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
+
 <div class="col-md-6">
     <h1>Set: <?= htmlspecialchars($oaiSet->getSetSpec()) ?></h1>
 
@@ -47,6 +55,4 @@
         <pre class="bg-light p-2 border"><?= htmlspecialchars($oaiSetDescription->getSetDescription()) ?></pre>
     <?php endif; ?>
 
-    <a class="btn btn-secondary" href="?controller=set&action=list">Back to list</a>
-    <a class="btn btn-primary" href="?controller=set&action=edit&repo=<?= urlencode($oaiSet->getRepo()) ?>&spec=<?= urlencode($oaiSet->getSetSpec()) ?>">Edit</a>
 </div>

@@ -131,6 +131,7 @@ class SetController extends AbstractController
         $oaiSetDescription = GenericModelMapper::map($_POST, OaiSetDescription::class);
 
         $oaiSet->setUpdated(date('Y-m-d H:i:s'));
+        $oaiSetDescription->setUpdated(date('Y-m-d H:i:s'));
 
         $success = $this->oaiSetRepository->insert($oaiSet);
 

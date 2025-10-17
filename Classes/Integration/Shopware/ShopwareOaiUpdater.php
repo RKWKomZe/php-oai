@@ -2,6 +2,7 @@
 
 namespace RKW\OaiConnector\Integration\Shopware;
 
+use RKW\OaiConnector\Repository\OaiSetRepository;
 use Symfony\Component\VarDumper\VarDumper;
 
 /**
@@ -13,10 +14,27 @@ use Symfony\Component\VarDumper\VarDumper;
 class ShopwareOaiUpdater extends \Oai_Updater
 {
 
+    /**
+     * @var string
+     */
     protected string $repoId;
 
+    /**
+     * @var array
+     */
     protected array $records = [];
+
+    /**
+     * @var int
+     */
     protected int $cursor = 0;
+
+    private ?OaiSetRepository $oaiSetRepository = null;
+
+    protected function getOaiSetRepository(): OaiSetRepository
+    {
+        return $this->oaiSetRepository ??= new OaiSetRepository();
+    }
 
     /**
      * Constructor to initialize a repository connection along with specific records to be managed.
@@ -46,6 +64,7 @@ class ShopwareOaiUpdater extends \Oai_Updater
         parent::__construct($hostname, $username, $password, $database, $repo, $save_history);
         $this->repoId = $repo;
         $this->records = $records;
+        $this->oaiSetRepository = $this->getOaiSetRepository();
     }
 
 
@@ -313,8 +332,21 @@ XML;
 
          */
 
-        return ['default'];
+        // solution a little bit stupid, works only with one Set. Maybe the Set-Selection should work through shopware
+        // categories or somewhat else
+        $oaiRepoSet = $this->oaiSetRepository
+            ->withModels()
+            ->findOneBy(
+                [
+                    'repo' => $this->repoId
+                ]
+            );
+
+        return [$oaiRepoSet->getSetSpec()];
+
         // Das set muss vorher existieren. Hier legen wir es einfach mal via "Piratenmethode" an:
+       // return ['default'];
+
 
         /*
         $setSpec = 'shopware';

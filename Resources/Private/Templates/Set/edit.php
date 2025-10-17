@@ -1,3 +1,11 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Set', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Edit Set</h1>
 </div>
@@ -48,8 +56,17 @@
                       placeholder="Paste XML here if needed"><?= htmlspecialchars($oaiSetDescription?->getSetDescription() ?? '') ?></textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">Save changes</button>
-        <a class="btn btn-secondary" href="?controller=set&action=list">Cancel</a>
+        <div class="d-flex justify-content-between">
+            <?php
+            echo LinkHelper::renderLink(
+                'Set',
+                'list',
+                [],
+                'Cancel',
+                ['class' => 'btn btn btn-secondary']);
+            ?>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
     </form>
 </div>
 

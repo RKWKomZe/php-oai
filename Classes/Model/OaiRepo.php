@@ -335,6 +335,11 @@ class OaiRepo
      */
     public function setUpdated(string $updated): void
     {
+        // Ignore empty or null values on insert (SQLSTATE[23000]: Integrity constraint violation: 1048 Column 'updated' cannot be null)
+        if ($updated === null || $updated === '') {
+            return;
+        }
+
         $this->updated = $updated;
     }
 

@@ -1,3 +1,10 @@
+<?php
+
+use RKW\OaiConnector\Utility\LinkHelper;
+
+echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+
+?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Create new metadata format</h1>
@@ -55,7 +62,7 @@
 
             <div class="d-flex justify-content-between">
                 <a class="btn btn-secondary" href="?controller=meta&action=list">Back</a>
-                <button type="submit" class="btn btn-primary">Create metadata</button>
+                <button type="submit" class="btn btn-primary">Create Metadata</button>
             </div>
 
         </form>

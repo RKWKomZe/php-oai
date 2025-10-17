@@ -52,7 +52,7 @@ class OaiService
 
         // To ensure that today's records can also be found when the "until" date is set to today's date
         $tz = new \DateTimeZone('Europe/Berlin');
-        if ($_GET['until'] !== null) {
+        if (isset($_GET['until']) && $_GET['until'] !== null) {
             $tmp = new \DateTime($_GET['until'] . ' 00:00:00', $tz);
             $tmp->modify('+1 day');
             $_GET['until'] = $tmp->format('Y-m-d'); // bump one day to emulate end-of-day

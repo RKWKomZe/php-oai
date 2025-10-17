@@ -2,7 +2,7 @@
 
 use RKW\OaiConnector\Utility\LinkHelper;
 
-echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
+echo LinkHelper::renderLink('Repo', 'list', [], '&larr; Back to list', ['class' => 'btn btn-sm btn-outline-secondary mb-3']);
 
 ?>
 
@@ -71,29 +71,42 @@ echo LinkHelper::renderLink('Repo', 'list', ['repo' => $oaiRepo->getId()], '&lar
         </div>
 
         <div class="form-group">
-            <label for="maxListSize">Max List Size</label>
+            <label for="maxListSize">Max List Size *</label>
             <input type="number" name="maxListSize" id="maxListSize" class="form-control" min="0"
-                   value="<?= htmlspecialchars((string)$oaiRepo->getMaxListSize()) ?>">
+                   value="<?= htmlspecialchars((string)$oaiRepo->getMaxListSize()) ?>" required>
         </div>
 
         <div class="form-group">
-            <label for="tokenDuration">Token Duration (seconds)</label>
+            <label for="tokenDuration">Token Duration (seconds) *</label>
             <input type="number" name="tokenDuration" id="tokenDuration" class="form-control" min="0"
-                   value="<?= htmlspecialchars((string)$oaiRepo->getTokenDuration()) ?>">
+                   value="<?= htmlspecialchars((string)$oaiRepo->getTokenDuration()) ?>" required>
         </div>
 
         <div class="form-group">
+            <label for="description" class="form-label">Set Description (XML) *</label>
+            <textarea class="form-control" name="description" id="description" rows="5" required>
+                <?= htmlspecialchars($oaiRepo->getComment()) ?>
+            </textarea>
+        </div>
+
+        <div class="form-group mb-3">
             <label for="comment">Comment</label>
-            <textarea name="comment" id="comment" class="form-control" rows="3"><?= htmlspecialchars($oaiRepo->getComment()) ?></textarea>
+            <textarea name="comment" id="comment" class="form-control" rows="3">
+                <?= htmlspecialchars($oaiRepo->getComment()) ?>
+            </textarea>
         </div>
 
-        <div class="mb-3">
-            <label for="description" class="form-label">Set Description (XML)</label>
-            <textarea class="form-control" name="description" id="description" rows="5"
-                      placeholder="Paste XML here if needed"><?= htmlspecialchars($oaiRepoDescription?->getDescription() ?? '') ?></textarea>
-        </div>
 
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a href="<?= $this->linkHelper->create('Repo', 'list') ?>" class="btn btn-secondary">Cancel</a>
+        <div class="d-flex justify-content-between">
+            <?php
+            echo LinkHelper::renderLink(
+                'Repo',
+                'list',
+                [],
+                'Cancel',
+                ['class' => 'btn btn btn-secondary']);
+            ?>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
     </form>
 </div>
