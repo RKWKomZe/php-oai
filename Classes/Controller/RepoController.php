@@ -10,6 +10,7 @@ use RKW\OaiConnector\Repository\OaiRepoDescriptionRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * RepoController
@@ -101,10 +102,14 @@ class RepoController extends AbstractController
 
     /**
      * Renders the 'new' view.
+     * @throws \ReflectionException
      */
     public function new(): void
     {
-        $this->render('new');
+        $this->render('new', [
+            'oaiRepo' => new OaiRepo(),
+            'oaiRepoDescription' => new OaiRepoDescription(),
+        ]);
     }
 
 
@@ -122,6 +127,7 @@ class RepoController extends AbstractController
     public function create(): void
     {
         $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
+
         $oaiRepoDescription = GenericModelMapper::map($_POST, OaiRepoDescription::class);
         $oaiRepoDescription->setRepo($oaiRepo->getId());
 
@@ -131,8 +137,6 @@ class RepoController extends AbstractController
         $success = $this->oaiRepoRepository->insert($oaiRepo);
 
         $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
-
-        // @toDo: Meldung auch für oaiRepoDescription?
 
         if ($success) {
             FlashMessage::add('Repository was successfully created. Next, an “OAI Meta” with linked schema prefix (e.g., “oai_dc”) should be created.',  FlashMessage::TYPE_SUCCESS);
@@ -223,6 +227,25 @@ class RepoController extends AbstractController
         FlashMessage::add('Record deleted.', FlashMessage::TYPE_SUCCESS);
 
         Redirect::to('list', 'Repo', ['id' => $oaiRepo->getId()]);
+    }
+
+
+    /**
+     * @return void
+     */
+    public function validateRepoId(): void
+    {
+        header('Content-Type: application/json');
+
+        $repoId = trim($_GET['repoId'] ?? '');
+        $exists = false;
+
+        if ($repoId !== '') {
+            $exists = (bool) $this->oaiRepoRepository->findOneBy(['id' => $repoId]);
+        }
+
+        echo json_encode(['exists' => $exists]);
+        exit;
     }
 
 

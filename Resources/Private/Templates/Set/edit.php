@@ -31,30 +31,7 @@ echo LinkHelper::renderLink('Set', 'list', [], '&larr; Back to list', ['class' =
                    title="The Set Spec is a stable identifier and must not be changed. If a new set is needed, please create one.">
         </div>
 
-        <div class="mb-3">
-            <label for="setName" class="form-label">Set Name</label>
-            <input type="text" class="form-control" name="setName" id="setName" required
-                   placeholder="e.g. Publications or Research Data"
-                   value="<?= htmlspecialchars($oaiSet->getSetName() ?? '') ?>">
-        </div>
-
-        <div class="mb-3">
-            <label for="rank" class="form-label">Rank</label>
-            <input type="number" class="form-control" name="rank" id="rank" min="0" required
-                   value="<?= htmlspecialchars($oaiSet->getRank()) ?>">
-        </div>
-
-        <div class="mb-3">
-            <label for="comment" class="form-label">Comment (optional)</label>
-            <textarea class="form-control" name="comment" id="comment" rows="2"
-                      placeholder="e.g. Required for OpenAIRE compatibility"><?= htmlspecialchars($oaiSet->getComment() ?? '') ?></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label for="setDescription" class="form-label">Set Description (XML)</label>
-            <textarea class="form-control" name="setDescription" id="setDescription" rows="5"
-                      placeholder="Paste XML here if needed"><?= htmlspecialchars($oaiSetDescription?->getSetDescription() ?? '') ?></textarea>
-        </div>
+        <?php include __DIR__ . '/../../Partials/Set/FormFields.php'; ?>
 
         <div class="d-flex justify-content-between">
             <?php
@@ -71,14 +48,18 @@ echo LinkHelper::renderLink('Set', 'list', [], '&larr; Back to list', ['class' =
 </div>
 
 <script>
-    document.getElementById('setForm').addEventListener('submit', function (e) {
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            const firstInvalid = this.querySelector(':invalid');
-            if (firstInvalid) {
-                firstInvalid.focus();
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('setForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    const firstInvalid = this.querySelector(':invalid');
+                    if (firstInvalid) {
+                        firstInvalid.focus();
+                    }
+                }
+            });
         }
     });
-
 </script>

@@ -75,10 +75,6 @@ class ItemController extends AbstractController
             'activeRepo' => $activeRepoId,
             'itemList' => $records,
             'pagination' => $pagination
-            //'limit' => $limit,
-            //'page' => $page,
-            //'totalPages' => $totalPages,
-            //'allowedLimits' => $allowedLimits,
         ]);
 
     }

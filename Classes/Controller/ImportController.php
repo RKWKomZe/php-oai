@@ -102,8 +102,6 @@ class ImportController extends AbstractController
             $metadataPrefixListSorted[$repoId][$metadataPrefix->getMetadataPrefix()] = $metadataPrefix->getMetadataPrefix();
         }
 
-    //    VarDumper::dump($metadataPrefixListSorted); exit;
-
         if (!count($repoList)) {
             FlashMessage::add('No repositories found. Import not possible. Please create an OAI-Repo first.', FlashMessage::TYPE_DANGER);
         }
@@ -229,8 +227,7 @@ class ImportController extends AbstractController
         $logEntry = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($logEntry && $logEntry['error']) {
-            $errorMessage = $logEntry['errmsg']; // enthält die Exception-Message
-            // nun behandeln oder anzeigen
+            $errorMessage = $logEntry['errmsg'];
 
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => $errorMessage]);
@@ -248,15 +245,6 @@ class ImportController extends AbstractController
             Redirect::to('list', 'import');
         }
 
-        /*
-        header('Content-Type: application/json');
-echo json_encode(['success' => true]);
-
-        header('Content-Type: application/json', true, 400);
-echo json_encode(['success' => false, 'message' => 'Produkt konnte nicht gefunden werden']);
-
-
-         */
     }
 
 
@@ -294,11 +282,11 @@ echo json_encode(['success' => false, 'message' => 'Produkt konnte nicht gefunde
         $repo = $config['oai']['defaultRepoId'];
         $saveHistory = $config['oai']['save_history'] ?? true;
 
-        // 1. Produkte via Shopware-API holen
+        // 1. Get products via Shopware API
         $fetcher = new ShopwareOaiFetcher();
         $records = $fetcher->fetchAndTransform();
 
-        // 2. An OAI Updater übergeben
+        // 2. Passed to OAI Updater
         $updater = new ShopwareOaiUpdater(
             $dbConfig['host'],
             $dbConfig['user'],
@@ -311,22 +299,7 @@ echo json_encode(['success' => false, 'message' => 'Produkt konnte nicht gefunde
 
         $updater->run();
 
-    //    $updater->setSpecArray(['products']); // falls erwartet
-    //    $updater->setMetadataPrefixArray(['oai_dc']); // falls erwartet
-    //    $updater->setRecords($records);
-
-
         FlashMessage::add(count($records) . ' Produkte erfolgreich importiert.', FlashMessage::TYPE_SUCCESS);
-
-        // 3. View
-        /*
-        $this->render('import_result', [
-            'imported' => count($records),
-            'success' => true,
-        ]);
-        */
-
-        //$this->render('index');
 
         Redirect::to('fullImport', 'Tool');
     }

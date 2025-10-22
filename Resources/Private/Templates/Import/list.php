@@ -101,60 +101,46 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     <i class="bi bi-check-circle-fill" style="color: #198754; opacity: 0.5; font-size: 1.4rem;"></i>
     <span class="text-muted">This symbol indicates products that have already been imported</span>
 </div>
-<!-- Produktliste -->
-<?php foreach ($productList as $product): ?>
 
-    <?php
-    $existingRecordIdentifier = "oai:$activeRepoId:" . $product['id'];
-    $alreadyImported = in_array($existingRecordIdentifier, $existingIdentifiers, true);
-    ?>
+<?php if (empty($productList)): ?>
+    <div class="alert alert-warning" role="alert">
+        No records found. Maybe you should change the filter settings? (e.g. from/until dates)
+    </div>
+<?php else: ?>
+    <!-- Product list -->
+    <?php foreach ($productList as $product): ?>
 
-    <div class="card mb-4 position-relative" data-product-id-container="<?= $product['id'] ?>">
-        <?php if ($alreadyImported): ?>
-            <!-- Overlay for already imported products -->
-            <div class="imported-overlay">
-                <i class="bi bi-check-circle-fill check-icon" title="Bereits importiert"></i>
-            </div>
-        <?php endif; ?>
+        <?php
+        $existingRecordIdentifier = "oai:$activeRepoId:" . $product['id'];
+        $alreadyImported = in_array($existingRecordIdentifier, $existingIdentifiers, true);
+        ?>
 
-        <div class="row g-0">
-            <div class="col-md-2 pt-4 text-center">
-                <?php if (!empty($product['cover']['media']['url'])): ?>
-                    <?php /* if (!empty($config['environment'] === 'development')): ?>
-                        <!-- for testing purpose: The api-URL is a container URL. We need the real ddev URL -->
-                        <img src="<?= htmlspecialchars(LocalTestStuff::fixShopwareMediaUrl($product['cover']['media']['url'])) ?>" class="img-fluid rounded-start" alt="Produktbild">
-                    <?php else: ?>
+        <div class="card mb-4 position-relative" data-product-id-container="<?= $product['id'] ?>">
+            <?php if ($alreadyImported): ?>
+                <!-- Overlay for already imported products -->
+                <div class="imported-overlay">
+                    <i class="bi bi-check-circle-fill check-icon" title="Bereits importiert"></i>
+                </div>
+            <?php endif; ?>
+
+            <div class="row g-0">
+                <div class="col-md-2 pt-4 text-center">
+                    <?php if (!empty($product['cover']['media']['url'])): ?>
+                        <?php /* if (!empty($config['environment'] === 'development')): ?>
+                            <!-- for testing purpose: The api-URL is a container URL. We need the real ddev URL -->
+                            <img src="<?= htmlspecialchars(LocalTestStuff::fixShopwareMediaUrl($product['cover']['media']['url'])) ?>" class="img-fluid rounded-start" alt="Produktbild">
+                        <?php else: ?>
+                            <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
+                        <?php endif; */ ?>
                         <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
-                    <?php endif; */ ?>
-                    <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
-                <?php else: ?>
-                    <div class="text-muted mt-4">No image</div>
-                <?php endif; ?>
-            </div>
-            <div class="col-md-10">
-                <div class="card-body">
+                    <?php else: ?>
+                        <div class="text-muted mt-4">No image</div>
+                    <?php endif; ?>
+                </div>
+                <div class="col-md-10">
+                    <div class="card-body">
 
-                    <?php if (!$alreadyImported): ?>
-                        <?php
-                        echo LinkHelper::renderLink(
-                            'import',
-                            'importOne',
-                            [
-                                'id' => $product['id'],
-                                'repo' => $activeRepoId,
-                                'metadataPrefix' => $activeMetadataPrefix
-                            ],
-                            'Approve',
-                            [
-                                'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button',
-                                //'onclick' => 'return confirm("Are you sure you want to import this record?")',
-                                'data-product-id' => $product['id'],
-                                'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
-                            ]);
-                        ?>
-                    <?php else:
-                        ?>
-                        <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+                        <?php if (!$alreadyImported): ?>
                             <?php
                             echo LinkHelper::renderLink(
                                 'import',
@@ -164,55 +150,76 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                     'repo' => $activeRepoId,
                                     'metadataPrefix' => $activeMetadataPrefix
                                 ],
-                                'Re-Import',
+                                'Approve',
                                 [
-                                    'class' => 'btn btn-sm btn-secondary import-button',
-                                    //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
+                                    'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button',
+                                    //'onclick' => 'return confirm("Are you sure you want to import this record?")',
                                     'data-product-id' => $product['id'],
-                                    'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix
-
+                                    'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
                                 ]);
                             ?>
-                            <?php
-                            echo LinkHelper::renderLink(
-                                'Item',
-                                'show',
-                                [
-                                    'id' => $existingRecordIdentifier,
-                                    'repo' => $activeRepoId,
-                                    'returnTo' => $_SERVER['REQUEST_URI']
-                                ],
-                                'Show',
-                                [
-                                    'class' => 'btn btn-outline-secondary btn-sm',
-                                    //'target' => '_blank'
-                                ]);
+                        <?php else:
                             ?>
-                        </div>
-                    <?php endif; ?>
+                            <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+                                <?php
+                                echo LinkHelper::renderLink(
+                                    'import',
+                                    'importOne',
+                                    [
+                                        'id' => $product['id'],
+                                        'repo' => $activeRepoId,
+                                        'metadataPrefix' => $activeMetadataPrefix
+                                    ],
+                                    'Re-Import',
+                                    [
+                                        'class' => 'btn btn-sm btn-secondary import-button',
+                                        //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
+                                        'data-product-id' => $product['id'],
+                                        'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix
+
+                                    ]);
+                                ?>
+                                <?php
+                                echo LinkHelper::renderLink(
+                                    'Item',
+                                    'show',
+                                    [
+                                        'id' => $existingRecordIdentifier,
+                                        'repo' => $activeRepoId,
+                                        'returnTo' => $_SERVER['REQUEST_URI']
+                                    ],
+                                    'Show',
+                                    [
+                                        'class' => 'btn btn-outline-secondary btn-sm',
+                                        //'target' => '_blank'
+                                    ]);
+                                ?>
+                            </div>
+                        <?php endif; ?>
 
 
-                    <h5 class="card-title"><?= htmlspecialchars((string)$product['name']) ?></h5>
-                    <p class="card-text mb-1"><strong>Artikelnummer:</strong> <?= htmlspecialchars($product['productNumber']) ?></p>
-                    <p class="card-text mb-1"><strong>Hersteller:</strong> <?= htmlspecialchars($product['manufacturer']['name'] ?? '-') ?></p>
-                    <p class="card-text mb-1"><strong>Beschreibung:</strong> <?= htmlspecialchars($product['description'] ?? '-') ?></p>
-                    <p class="card-text mb-1"><strong>Erstellt am:</strong> <?= htmlspecialchars($product['createdAt']) ?></p>
-                    <p class="card-text mb-1"><strong>Aktiv:</strong> <?= $product['active'] ? 'Ja' : 'Nein' ?></p>
-                    <p class="card-text mb-1"><strong>Lagerbestand:</strong> <?= htmlspecialchars($product['stock']) ?></p>
-                    <p class="card-text mb-1"><strong>ID:</strong> <?= htmlspecialchars($product['id']) ?></p>
+                        <h5 class="card-title"><?= htmlspecialchars((string)$product['name']) ?></h5>
+                        <p class="card-text mb-1"><strong>Artikelnummer:</strong> <?= htmlspecialchars($product['productNumber']) ?></p>
+                        <p class="card-text mb-1"><strong>Hersteller:</strong> <?= htmlspecialchars($product['manufacturer']['name'] ?? '-') ?></p>
+                        <p class="card-text mb-1"><strong>Beschreibung:</strong> <?= htmlspecialchars($product['description'] ?? '-') ?></p>
+                        <p class="card-text mb-1"><strong>Erstellt am:</strong> <?= htmlspecialchars($product['createdAt']) ?></p>
+                        <p class="card-text mb-1"><strong>Aktiv:</strong> <?= $product['active'] ? 'Ja' : 'Nein' ?></p>
+                        <p class="card-text mb-1"><strong>Lagerbestand:</strong> <?= htmlspecialchars($product['stock']) ?></p>
+                        <p class="card-text mb-1"><strong>ID:</strong> <?= htmlspecialchars($product['id']) ?></p>
 
-                    <details class="mt-3">
-                        <summary>Weitere Felder anzeigen</summary>
-                        <pre class="mt-2 bg-light p-2 border rounded small">
-                            <?= htmlspecialchars(json_encode($product, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) ?>
-                        </pre>
-                    </details>
+                        <details class="mt-3">
+                            <summary>Weitere Felder anzeigen</summary>
+                            <pre class="mt-2 bg-light p-2 border rounded small">
+                                <?= htmlspecialchars(json_encode($product, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) ?>
+                            </pre>
+                        </details>
 
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-<?php endforeach; ?>
+    <?php endforeach; ?>
+<?php endif; ?>
 
 
 <?php if ($maxPages > 1): ?>

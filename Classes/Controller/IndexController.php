@@ -55,13 +55,6 @@ class IndexController extends AbstractController
     public function index(): void
     {
 
-
-        // @toDo: Allgemeine Gedanken / Ideen: Offenbar kann man mehrere OAI-Repos betreiben.
-        // Mit welchem Nutzen? Repo je Quelle, oder je Harvester?
-        // Ziemlich sicher brauchen wir ja ohnehin einen Controller fürs harvesten. Ggf hier mit URL Parameterübergabe arbeiten
-        // So das man Repo name + speziellen Key / Token übergeben muss, damit Repo X abgefragt werden kann
-
-
         $pdo = DbConnection::get();
 
         $stmt = $pdo->query('

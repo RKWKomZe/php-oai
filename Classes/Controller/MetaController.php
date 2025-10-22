@@ -113,7 +113,10 @@ class MetaController extends AbstractController
     public function new(): void
     {
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
-        $this->render('new', ['repoList' => $repoList]);
+        $this->render('new', [
+            'repoList' => $repoList,
+            'oaiMeta' => new OaiMeta(),
+        ]);
     }
 
 
@@ -183,6 +186,7 @@ class MetaController extends AbstractController
      * specified meta display.
      *
      * @return void
+     * @throws \ReflectionException
      */
     public function update(): void
     {

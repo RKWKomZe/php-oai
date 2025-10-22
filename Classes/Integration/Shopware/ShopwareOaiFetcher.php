@@ -84,7 +84,6 @@ class ShopwareOaiFetcher
             ],
             'query' => [
                 'associations[cover][associations][media]' => [],
-                // weitere Abhängigkeiten bei Bedarf hinzufügen
             ],
         ]);
 
@@ -97,7 +96,6 @@ class ShopwareOaiFetcher
             ],
             'query' => [
                 'associations[cover][associations][media]' => [],
-                // weitere Abhängigkeiten bei Bedarf hinzufügen
             ],
             'json' => [
                 'limit' => 1,

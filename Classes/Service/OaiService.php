@@ -23,6 +23,8 @@ class OaiService
     /**
      * Handles the incoming HTTP request for OAI-PMH processing.
      *
+     * HINT: The cbisiere/oai-pmh library is NOT compatible with "sql_mode=ONLY_FULL_GROUP_BY"
+     *
      * - Loads necessary configuration settings, including database and environment specifics.
      * - Defines debug mode based on the application's environment (development or production).
      * - Filters and restricts the allowed OAI-PMH parameters from the $_GET request to ensure security.

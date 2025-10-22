@@ -116,7 +116,11 @@ class SetController extends AbstractController
     public function new(): void
     {
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
-        $this->render('new', ['repoList' => $repoList]);
+        $this->render('new', [
+            'repoList' => $repoList,
+            'oaiSet' => new OaiSet(),
+            'oaiSetDescription' => new OaiSetDescription(),
+        ]);
     }
 
 
@@ -136,8 +140,6 @@ class SetController extends AbstractController
         $success = $this->oaiSetRepository->insert($oaiSet);
 
         $this->oaiSetDescriptionRepository->upsert($oaiSetDescription);
-
-        // @toDo: Meldung auch für Description?
 
         if ($success) {
             FlashMessage::add('Set created successfully.',  FlashMessage::TYPE_SUCCESS);
@@ -197,11 +199,10 @@ class SetController extends AbstractController
         $oaiSetDescription = GenericModelMapper::map($_POST, OaiSetDescription::class);
 
         $oaiSet->setUpdated(date('Y-m-d H:i:s'));
+        $oaiSetDescription->setUpdated(date('Y-m-d H:i:s'));
         $this->oaiSetRepository->update($oaiSet, ['setSpec', 'repo']);
 
         $this->oaiSetDescriptionRepository->upsert($oaiSetDescription);
-
-        // @toDo: Meldung auch für Description?
 
         FlashMessage::add('Datensatz erfolgreich bearbeitet.', FlashMessage::TYPE_SUCCESS);
 

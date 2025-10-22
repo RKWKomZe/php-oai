@@ -21,6 +21,7 @@ echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' 
 <div class="row">
     <div class="col-md-6">
         <form method="post" action="?controller=meta&action=create" id="metaForm" novalidate>
+
             <div class="mb-3">
                 <label for="repo" class="form-label">Repository</label>
                 <select class="form-select" name="repo" id="repo" required>
@@ -36,29 +37,12 @@ echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' 
             <div class="mb-3">
                 <label for="metadataPrefix" class="form-label">Metadaten prefix</label>
                 <input type="text" class="form-control" name="metadataPrefix" id="metadataPrefix" required
-                       placeholder="z. B. oai_dc oder shop_xml" pattern="^[a-zA-Z0-9._-]+$"
+                       placeholder="z. B. oai_dc oder shop_xml" pattern="^[a-zA-Z0-9._\-]+$"
                        title="Only letters, numbers, dot, underscore and hyphen allowed">
             </div>
 
-            <div class="mb-3">
-                <label for="schema" class="form-label">Schema URL</label>
-                <input type="url" class="form-control" name="schema" id="schema" required
-                       placeholder="https://www.openarchives.org/OAI/2.0/oai_dc.xsd"
-                       title="Please enter a valid URL">
-            </div>
 
-            <div class="mb-3">
-                <label for="metadataNamespace" class="form-label">XML Namespace</label>
-                <input type="url" class="form-control" name="metadataNamespace" id="metadataNamespace" required
-                       placeholder="https://www.openarchives.org/OAI/2.0/oai_dc/"
-                       title="Please enter a valid URL">
-            </div>
-
-            <div class="mb-3">
-                <label for="comment" class="form-label">Comment (optional)</label>
-                <textarea class="form-control" name="comment" id="comment" rows="2"
-                          placeholder="e.g. mandatory entry for Dublin Core according to the OAI-PMH specification"></textarea>
-            </div>
+            <?php include __DIR__ . '/../../Partials/Meta/FormFields.php'; ?>
 
             <div class="d-flex justify-content-between">
                 <a class="btn btn-secondary" href="?controller=meta&action=list">Back</a>
@@ -108,15 +92,6 @@ echo LinkHelper::renderLink('Meta', 'list', [], '&larr; Back to list', ['class' 
 
         prefixField.focus(); // visual feedback
     }
-
-    // Autofokus auf erstes ungültiges Feld bei fehlschlagendem Submit
-    document.getElementById('metaForm').addEventListener('submit', function (e) {
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            const firstInvalid = this.querySelector(':invalid');
-            if (firstInvalid) {
-                firstInvalid.focus();
-            }
-        }
-    });
 </script>
+
+<?php include __DIR__ . '/../../Partials/Meta/JavaScriptFooter.php'; ?>

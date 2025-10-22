@@ -28,7 +28,7 @@ class OaiSetDescription
      *
      * @var string
      */
-    protected string $setDescription;
+    protected string $setDescription = '';
 
     /**
      * rank

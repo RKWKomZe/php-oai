@@ -40,9 +40,9 @@ class OaiMeta
     /**
      * comment
      *
-     * @var string|null
+     * @var string
      */
-    protected ?string $comment = null;
+    protected ?string $comment = '';
 
     /**
      * updated

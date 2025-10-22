@@ -21,7 +21,7 @@ class OaiRepoDescription
      *
      * @var string
      */
-    protected string $description;
+    protected string $description = '';
 
     /**
      * rank

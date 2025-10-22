@@ -21,14 +21,14 @@ class OaiSet
      *
      * @var string
      */
-    protected string $setSpec;
+    protected string $setSpec = '';
 
     /**
      * setName
      *
      * @var string
      */
-    protected string $setName;
+    protected string $setName = '';
 
     /**
      * rank

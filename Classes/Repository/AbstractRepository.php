@@ -193,8 +193,22 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             implode(', ', $placeholders)
         );
 
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($values);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($values);
+        } catch (\PDOException $e) {
+            // Duplicate primary key
+            if ((int)$e->errorInfo[1] === 1062) {
+                throw new \RuntimeException(
+                    sprintf('A record with the same primary key already exists in "%s".', $this->tableName),
+                    1062,
+                    $e
+                );
+            }
+
+            // Re-throw all other DB errors
+            throw $e;
+        }
     }
 
 
@@ -296,14 +310,17 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
             $value = $model->$getter();
 
+            // Quote all column names with backticks to avoid MySQL reserved word conflicts
+            $quotedName = '`' . str_replace('`', '``', $name) . '`';
+
             if (in_array($name, $primaryKeys, true)) {
                 if ($value === null || $value === '') {
                     throw new \InvalidArgumentException("Primary key '{$name}' must not be null or empty.");
                 }
-                $whereClauses[] = "{$name} = :__pk_{$name}";
+                $whereClauses[] = "{$quotedName} = :__pk_{$name}";
                 $values["__pk_{$name}"] = $value;
             } else {
-                $columns[] = "{$name} = :{$name}";
+                $columns[] = "{$quotedName} = :{$name}";
                 $values[$name] = $value;
             }
         }
