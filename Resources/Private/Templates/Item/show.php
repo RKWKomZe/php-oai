@@ -1,5 +1,6 @@
 <?php
 
+use RKW\OaiConnector\Utility\FormatXml;
 use RKW\OaiConnector\Utility\LinkHelper;
 
 $returnTo = $_GET['returnTo'] ?? null;
@@ -49,7 +50,7 @@ echo $returnTo
     <tr>
         <th>Metadata (XML)</th>
         <td>
-            <pre class="bg-light p-2"><?= htmlspecialchars($item->getMetadata()) ?></pre>
+            <pre class="bg-light p-2" style="white-space:pre; overflow:auto;"><code class="language-xml"><?= FormatXml::formatXmlForDisplay((string)$item->getMetadata()); ?></code></pre>
         </td>
     </tr>
 </table>

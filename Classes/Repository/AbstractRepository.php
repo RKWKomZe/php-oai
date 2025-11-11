@@ -45,6 +45,11 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     protected ?\RKW\OaiConnector\Utility\Pagination $tempPagination = null;
 
     /**
+     * @var array|null
+     */
+    protected ?array $tempSorts = [];
+
+    /**
      * modelClass
      * Optional model class for mapping
      *
@@ -88,9 +93,11 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     {
         // Prefer explicitly passed argument, otherwise temporary state
         $pagination = $this->tempPagination;
+        $sorts      = $this->tempSorts;
 
         // Reset afterwards to avoid side effects
         $this->tempPagination = null;
+        $this->tempSorts = [];
 
         $whereClauses = [];
         $params = [];
@@ -99,6 +106,15 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $sql = 'SELECT * FROM ' . $this->getTableName();
         if ($whereClauses) {
             $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
+        }
+
+        if (!empty($sorts)) {
+            $orderParts = [];
+            foreach ($sorts as $s) {
+                // Column/direction already validated in withSort()
+                $orderParts[] = '`' . $s['column'] . '` ' . $s['direction'];
+            }
+            $sql .= ' ORDER BY ' . implode(', ', $orderParts);
         }
 
         if ($pagination) {
@@ -400,19 +416,18 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      *
      * @throws \PDOException If a database error occurs during query execution.
      */
-    public function findBy(
-        array $criteria = [],
-        array $orderBy = []
-    ): array {
+    public function findBy(array $criteria = []): array {
 
         $this->requireRepoContext();
         //$this->requireCriteria($criteria);
 
-        // Bevorzugt explizit übergebenes Argument, ansonsten temporären Zustand
+        // Prefer explicitly passed argument, otherwise temporary state
         $pagination = $this->tempPagination;
+        $sorts      = $this->tempSorts;
 
-        // Danach zurücksetzen, um Seiteneffekte zu vermeiden
+        // Reset afterwards to avoid side effects
         $this->tempPagination = null;
+        $this->tempSorts = [];
 
         $whereClauses = [];
         $params = [];
@@ -435,24 +450,18 @@ abstract class AbstractRepository implements RepoContextAwareInterface
 
         $sql = 'SELECT * FROM ' . $this->getTableName() . ' WHERE ' . implode(' AND ', $whereClauses);
 
-        if ($pagination) {
-            $sql .= ' LIMIT ' . $pagination->getLimit() . ' OFFSET ' . $pagination->getOffset();
-        }
-
-        if (!empty($orderBy)) {
+        if (!empty($sorts)) {
             $orderParts = [];
-            foreach ($orderBy as $column => $direction) {
-                $dir = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
-                $orderParts[] = "$column $dir";
+            foreach ($sorts as $s) {
+                // Column/direction already validated in withSort()
+                $orderParts[] = '`' . $s['column'] . '` ' . $s['direction'];
             }
             $sql .= ' ORDER BY ' . implode(', ', $orderParts);
         }
 
-        /*
         if ($pagination) {
             $sql .= ' LIMIT ' . $pagination->getLimit() . ' OFFSET ' . $pagination->getOffset();
         }
-        */
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
@@ -467,17 +476,21 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      * Retrieves a single record based on specific criteria.
      *
      * @param array $criteria An associative array of column-value pairs representing the query conditions.
-     * @param array $orderBy Optional. An associative array specifying column-direction pairs for ordering results. Direction can be 'ASC' or 'DESC'.
      * @return array|object|null Returns the matched record as an array or object, or null if no result is found.
      *
      * @throws \InvalidArgumentException If the $criteria array is empty or invalid.
      * @throws \PDOException If there is a problem executing the query.
      */
-    public function findOneBy(array $criteria, array $orderBy = []): array|object|null
+    public function findOneBy(array $criteria): array|object|null
     {
         //$this->requireRepoContext();
         $this->requireCriteria($criteria);
 
+        // Prefer explicitly passed argument, otherwise temporary state
+        $sorts = $this->tempSorts;
+
+        // Reset afterwards to avoid side effects
+        $this->tempSorts = [];
 
         $whereClauses = [];
         $params = [];
@@ -488,16 +501,16 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             $params[$paramName] = $value;
         }
 
-        // Füge repo-Kontext hinzu
+        // Add repo context
         $this->applyRepoContextToWhere($whereClauses, $params);
 
         $sql = 'SELECT * FROM ' . $this->getTableName() . ' WHERE ' . implode(' AND ', $whereClauses);
 
-        if (!empty($orderBy)) {
+        if (!empty($sorts)) {
             $orderParts = [];
-            foreach ($orderBy as $column => $direction) {
-                $dir = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
-                $orderParts[] = "$column $dir";
+            foreach ($sorts as $s) {
+                // Column/direction already validated in withSort()
+                $orderParts[] = '`' . $s['column'] . '` ' . $s['direction'];
             }
             $sql .= ' ORDER BY ' . implode(', ', $orderParts);
         }
@@ -707,6 +720,74 @@ abstract class AbstractRepository implements RepoContextAwareInterface
     {
         $this->tempPagination = $pagination;
         return $this;
+    }
+
+
+    /**
+     * Set a temporary sort for the next read query.
+     *
+     * @param string $column   Column to sort by (e.g. 'datestamp')
+     * @param string $direction 'ASC' or 'DESC' (default: 'ASC')
+     * @return self
+     */
+    public function withSort(string $column, string $direction = 'ASC'): self
+    {
+        // Basic whitelist for column identifier to avoid SQL injection via ORDER BY
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            throw new \InvalidArgumentException("Invalid sort column: {$column}");
+        }
+
+        $direction = strtoupper($direction);
+        if (!in_array($direction, ['ASC', 'DESC'], true)) {
+            throw new \InvalidArgumentException("Invalid sort direction: {$direction}");
+        }
+
+        $this->tempSorts[] = ['column' => $column, 'direction' => $direction];
+        return $this;
+    }
+
+
+    /**
+     * @param array $sorts
+     * @return $this
+     */
+    public function withSorts(array $sorts): self
+    {
+        // Normalize to list of [column, direction]
+        $normalized = [];
+
+        // Associative array form: ['name' => 'ASC', 'datestamp' => 'DESC']
+        $isAssoc = array_keys($sorts) !== range(0, count($sorts) - 1);
+        if ($isAssoc) {
+            foreach ($sorts as $col => $dir) {
+                $normalized[] = [(string)$col, (string)$dir];
+            }
+        } else {
+            // List form: [['name','ASC'], ['datestamp','DESC']]
+            foreach ($sorts as $pair) {
+                if (!is_array($pair) || count($pair) < 1) {
+                    throw new \InvalidArgumentException('Invalid sorts entry.');
+                }
+                $col = (string)$pair[0];
+                $dir = isset($pair[1]) ? (string)$pair[1] : 'ASC';
+                $normalized[] = [$col, $dir];
+            }
+        }
+
+        foreach ($normalized as [$column, $direction]) {
+            $this->withSort($column, $direction); // validation reused
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @return void
+     */
+    public function clearSort(): void
+    {
+        $this->tempSorts = [];
     }
 
 

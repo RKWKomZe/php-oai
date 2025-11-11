@@ -5,6 +5,9 @@ use RKW\OaiConnector\Utility\FlashMessage;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+(new \RKW\OaiConnector\Security\Gatekeeper())->handle();
+
+
 try {
     // Sanitize controller/action input
     $controllerName = ucfirst(isset($_GET['controller']) ? preg_replace('/[^a-zA-Z0-9]/', '', $_GET['controller']) : 'Index');

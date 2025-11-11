@@ -93,6 +93,13 @@ use RKW\OaiConnector\Utility\MenuHelper;
                     </ul>
                 </li>
             </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="?logout=1">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>

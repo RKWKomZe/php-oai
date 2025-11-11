@@ -39,6 +39,12 @@ return [
     'security' => [
         'enable_csrf' => true,
         'admin_ips' => ['127.0.0.1'],
+        'gatekeeper' => [
+            'adminUser' => $_ENV['GATEKEEPER_ADMIN_USER'],
+            'adminPassHash' => $_ENV['GATEKEEPER_ADMIN_PASS_HASH'],
+            'tokenSecret' => $_ENV['GATEKEEPER_TOKEN_SECRET'],
+            'tokenTtl' => $_ENV['GATEKEEPER_TOKEN_TTL'] ?: '900',
+        ]
     ],
     'testing' => [
         'localShopwareUrl' => 'https://rkw-shopware.ddev.site'

@@ -54,6 +54,7 @@ class ItemController extends AbstractController
 
     /**
      * Retrieves and renders a list of repositories and their respective items with pagination.
+     * @throws \ReflectionException
      */
     public function list(): void
     {
@@ -68,7 +69,12 @@ class ItemController extends AbstractController
         $pagination = PaginationFactory::fromRequestValues();
 
         $pagination->setTotalItems(count($this->oaiItemMetaRepository->findBy($criteria)));
-        $records = $this->oaiItemMetaRepository->withPagination($pagination)->withModels()->findBy($criteria);
+
+        $records = $this->oaiItemMetaRepository
+            ->withSort('datestamp', 'DESC')
+            ->withPagination($pagination)
+            ->withModels()
+            ->findBy($criteria);
 
         $this->render('list', [
             'repoList' => $repoList,
@@ -105,7 +111,7 @@ class ItemController extends AbstractController
                 'history' => 0
             ]);
 
-        // @toDo: Ggf warnung in den VIEW verlegen?
+        // @toDo: Ggf Warnung in den VIEW verlegen?
         if (!$item) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
             Redirect::to('list', 'Index');
