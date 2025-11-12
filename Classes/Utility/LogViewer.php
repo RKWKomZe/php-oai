@@ -14,7 +14,8 @@ final class LogViewer
      * Base log directory — adjust to your project structure.
      * Example: __DIR__ . '/../../logs'
      */
-    private static string $logDir = __DIR__ . '/../../logs';
+    public static string $logDir = __DIR__ . '/../../logs';
+
 
     /**
      * Optionally override base log directory at runtime.
@@ -24,6 +25,7 @@ final class LogViewer
         self::$logDir = rtrim($path, '/');
     }
 
+
     /**
      * Get base log directory.
      */
@@ -31,6 +33,7 @@ final class LogViewer
     {
         return self::$logDir;
     }
+
 
     /**
      * Return most recent log files matching a pattern, newest first.
@@ -46,6 +49,7 @@ final class LogViewer
         usort($files, fn(string $a, string $b) => filemtime($b) <=> filemtime($a));
         return array_slice($files, 0, $maxFiles);
     }
+
 
     /**
      * Tail last N lines from a single file efficiently.
@@ -84,6 +88,7 @@ final class LogViewer
         $rows = array_slice($rows, -$lines);
         return implode("\n", $rows);
     }
+
 
     /**
      * Tail across multiple rotated log files (newest first)

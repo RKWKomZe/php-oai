@@ -3,6 +3,8 @@
 namespace RKW\OaiConnector\Controller;
 
 use GuzzleHttp\Exception\GuzzleException;
+use Psr\Log\LoggerInterface;
+use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiFetcher;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiUpdater;
@@ -22,26 +24,50 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class ImportController extends AbstractController
 {
+    /**
+     * @var OaiItemMetaRepository|null
+     */
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
 
+    /**
+     * @var OaiRepoRepository|null
+     */
     private ?OaiRepoRepository $repoRepository = null;
 
+    /**
+     * @var OaiMetaRepository|null
+     */
     private ?OaiMetaRepository $oaiMetaRepository = null;
 
+    /**
+     * @return OaiItemMetaRepository
+     */
     protected function getOaiItemMetaRepository(): OaiItemMetaRepository
     {
         return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
     }
 
+    /**
+     * @return OaiRepoRepository
+     */
     protected function getRepoRepository(): OaiRepoRepository
     {
         return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);
     }
 
+    /**
+     * @return OaiMetaRepository
+     */
     protected function getOaiMetaRepository(): OaiMetaRepository
     {
         return $this->oaiMetaRepository ??= new OaiMetaRepository($this->settings['oai']['defaultRepoId']);
     }
+
+
+    /**
+     * @var ?LoggerInterface|LoggerFactory|null
+     */
+    private LoggerInterface|null|LoggerFactory $logger = null;
 
 
     /**
@@ -53,6 +79,8 @@ class ImportController extends AbstractController
         $this->oaiItemMetaRepository = $this->getOaiItemMetaRepository();
         $this->repoRepository = $this->getRepoRepository();
         $this->oaiMetaRepository = $this->getOaiMetaRepository();
+
+        $this->logger = LoggerFactory::get();
     }
 
 
@@ -213,8 +241,20 @@ class ImportController extends AbstractController
         $pdo = DbConnection::get();
         $lastLogId = (int) $pdo->query('SELECT MAX(id) FROM oai_update_log')->fetchColumn();
 
+        $this->logger->info('Start import', ['Identifier' => $identifier]);
+
         // do the update run
-        $updater->run(['all'], [$metadataPrefix]);
+        try {
+            $updater->run(['all'], [$metadataPrefix]);
+        } catch (\Throwable $e) {
+
+            // @toDo: Fehlermeldung wird von Library selbst schon abefangen, falls etwa SQL-Daten falsch. Dieser catch
+            // ... "catcht" also zumindest teilweise nicht
+            $this->logger->critical('Unexpected error while writing records to database:', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
 
         // check for errors
         $stmt = $pdo->prepare('
@@ -273,6 +313,8 @@ class ImportController extends AbstractController
      *
      * Response:
      * - This method redirects to another view, making it unsuitable for direct AJAX handling.
+     * @throws GuzzleException
+     * @throws \Exception
      */
     public function run(): void
     {
@@ -297,9 +339,16 @@ class ImportController extends AbstractController
             $records
         );
 
-        $updater->run();
+        try {
+            $updater->run();
+        } catch (\Throwable $e) {
+            // final safeguard (unexpected runtime errors)
+            $this->logger->critical('Unexpected error while writing records to database:', [
+                'error' => $e->getMessage(),
+            ]);
+        }
 
-        FlashMessage::add(count($records) . ' Produkte erfolgreich importiert.', FlashMessage::TYPE_SUCCESS);
+        FlashMessage::add(count($records) . ' Products successfully imported.', FlashMessage::TYPE_SUCCESS);
 
         Redirect::to('fullImport', 'Tool');
     }

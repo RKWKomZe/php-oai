@@ -17,7 +17,7 @@ try {
     $logDir = __DIR__ . '/../logs';
 
     // Initialize global Monolog instance
-    LoggerFactory::init($logDir, 'oai-app');
+    LoggerFactory::init($logDir);
 
 
     // ### ROUTING ###

@@ -19,6 +19,7 @@ use Psr\Log\NullLogger;
  */
 final class LoggerFactory
 {
+
     private static ?LoggerInterface $instance = null;
 
     /**

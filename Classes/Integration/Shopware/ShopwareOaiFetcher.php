@@ -4,6 +4,7 @@ namespace RKW\OaiConnector\Integration\Shopware;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Psr\Log\LoggerInterface;
 use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Utility\ConfigLoader;
 
@@ -30,9 +31,9 @@ class ShopwareOaiFetcher
     private string $clientSecret;
 
     /**
-     * @var ?LoggerFactory|null
+     * @var ?LoggerInterface|LoggerFactory|null
      */
-    private \Psr\Log\LoggerInterface|null|LoggerFactory $logger = null;
+    private LoggerInterface|null|LoggerFactory $logger = null;
 
     /**
      * constructor
@@ -157,6 +158,10 @@ class ShopwareOaiFetcher
             'releaseDate' => $product['releaseDate'] ?? '',
             'categoryIds' => $product['categoryIds'] ?? [],
             'customFields' => $product['customFields'] ?? [],
+
+            // auf basis von Steffens PDF
+            'digital_address' => '???',
+
         ];
     }
 

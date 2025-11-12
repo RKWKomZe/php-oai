@@ -505,15 +505,10 @@ XML;
 
     /**
      * Render MARCXML (slim schema) incl. bundle relations and category handling.
-     * - 001 control number
-     * - 245$a title
-     * - 520$a description (prefers custom_meta_covertext)
-     * - 264$c year (from datestamp)
-     * - 856$u URLs (page + download fields)
-     * - 773 (child -> parent from custom_bundles_parent)
-     * - 774 (parent -> children from custom_bundles_products)
-     * - 690$a local subject for raw category ID
-     * - 650$a topical term if a human-readable category name is available
+     *
+     * Marc21 856 = "Electronic Location and Access" (URL e.g)
+     * ind1="4" -> Zugriffsmethode http/https. Andere Werte wären z. B. 0=E-Mail, 1=FTP, 2=Telnet, 3=Dial-up, 7=„sonstiges; genauer in $2“.
+     *
      */
     private function renderMarcXml(array $f): string
     {
@@ -532,8 +527,6 @@ XML;
             return array_values(array_unique($parts));
         };
 
-        $cf = $f['customFields'] ?? [];
-
         // <record xmlns="http://www.loc.gov/MARC21/slim">
         $record = $doc->createElementNS('http://www.loc.gov/MARC21/slim', 'record');
         $doc->appendChild($record);
@@ -545,27 +538,205 @@ XML;
         // 001 Controlfield: stable control number (prefer explicit identifier, else URL)
         $id = ($f['identifier'] ?? '') ?: ($f['url'] ?? '');
         if ($id !== '') {
-            $cf001 = $doc->createElement('controlfield', $id);
-            $cf001->setAttribute('tag', '001');
-            $record->appendChild($cf001);
+            $customFields001 = $doc->createElement('controlfield', $id);
+            $customFields001->setAttribute('tag', '001');
+            $record->appendChild($customFields001);
         }
 
-        // 245 Title statement
-        if (!empty($f['title'])) {
+
+        //##############################################################################
+        // 245 Title statement from:
+        // - main title: name -> 245 $a
+        // - subtitle : translated.customFields.custom_meta_subheader -> 245 $b
+        $title = trim($f['name'] ?? '');
+        $subtitle = trim($f['translated']['customFields']['custom_meta_subheader'] ?? '');
+
+        // Helper to compute non-filing characters (indicator 2) for common leading articles
+        $computeNonFiling = static function (string $t): int {
+            // Articles to strip for filing (case-insensitive). Include trailing space/apostrophe.
+            $articles = [
+                "der ", "die ", "das ", "ein ", "eine ", "einen ", "dem ", "den ", "des ",
+                "the ", "a ", "an ",
+                "le ", "la ", "les ", "l'",
+                "el ", "los ", "las ",
+                "il ", "lo ", "gli ", "i ",
+                "de ", "het ", "den ", "det "
+            ];
+            $lt = mb_strtolower($t, 'UTF-8');
+            foreach ($articles as $art) {
+                if (mb_substr($lt, 0, mb_strlen($art, 'UTF-8'), 'UTF-8') === $art) {
+                    // Count exact UTF-8 length of the matched prefix as non-filing chars
+                    return min(mb_strlen($art, 'UTF-8'), 9); // MARC 245 ind2 is a single digit (0–9)
+                }
+            }
+            return 0;
+        };
+
+        if ($title !== '') {
+            // Decide ind1: set to "1" if you create a 1XX main entry elsewhere, otherwise "0"
+            $hasMainEntry1XX = false; // set true if you add 100/110/111
+            $ind1 = $hasMainEntry1XX ? '1' : '0';
+            $ind2 = (string)$computeNonFiling($title);
+
             $df245 = $doc->createElement('datafield');
             $df245->setAttribute('tag', '245');
-            $df245->setAttribute('ind1', '1'); // "1" often used when there's a 1XX main entry
-            $df245->setAttribute('ind2', '0');
+            $df245->setAttribute('ind1', $ind1);
+            $df245->setAttribute('ind2', $ind2);
 
-            $sfA = $doc->createElement('subfield', $f['title']);
+            // $a: ensure clean punctuation before adding $b
+            $aText = rtrim($title, " /:;");
+            if ($subtitle !== '') {
+                $aText .= ' :'; // MARC punctuation: space-colon before $b
+            }
+
+            $sfA = $doc->createElement('subfield', $aText);
             $sfA->setAttribute('code', 'a');
             $df245->appendChild($sfA);
+
+            if ($subtitle !== '') {
+                $sfB = $doc->createElement('subfield', $subtitle);
+                $sfB->setAttribute('code', 'b');
+                $df245->appendChild($sfB);
+            }
 
             $record->appendChild($df245);
         }
 
+        //##############################################################################
+        // 264 Publication year (from datestamp YYYY…)
+        if (!empty($f['releaseDate'])) {
+            $year = substr((string)$f['releaseDate'], 0, 4);
+            if (ctype_digit($year)) {
+                $df264 = $doc->createElement('datafield');
+                $df264->setAttribute('tag', '264');
+                $df264->setAttribute('ind1', ' ');
+                $df264->setAttribute('ind2', '1'); // 1 = publication
+
+                $sfC = $doc->createElement('subfield', $year);
+                $sfC->setAttribute('code', 'c');
+                $df264->appendChild($sfC);
+
+                $record->appendChild($df264);
+            }
+        }
+
+
+        // ################################
+        // #### SHOPWARE CUSTOM FIELDS ####
+        // ################################
+
+        $customFields = $f['customFields'] ?? [];
+
+        //##############################################################################
+        // 20 / 22 - ISBN / ISSN or product number mapping
+        $value = $customFields['custom_product_oai_issn_isbn'] ?? '';
+        $productNumber = $f['productNumber'] ?? '';
+
+        if (!empty($value)) {
+            if (preg_match('/^\d{9}[\dXx]$/', $value) || preg_match('/^\d{13}$/', $value)) {
+                // ISBN
+                $df020 = $doc->createElement('datafield');
+                $df020->setAttribute('tag', '020');
+                $df020->setAttribute('ind1', ' ');
+                $df020->setAttribute('ind2', ' ');
+                $sfA = $doc->createElement('subfield', $value);
+                $sfA->setAttribute('code', 'a');
+                $df020->appendChild($sfA);
+                $record->appendChild($df020);
+            } elseif (preg_match('/^\d{4}-\d{3}[\dxX]$/', $value)) {
+                // ISSN
+                $df022 = $doc->createElement('datafield');
+                $df022->setAttribute('tag', '022');
+                $df022->setAttribute('ind1', ' ');
+                $df022->setAttribute('ind2', ' ');
+                $sfA = $doc->createElement('subfield', $value);
+                $sfA->setAttribute('code', 'a');
+                $df022->appendChild($sfA);
+                $record->appendChild($df022);
+            }
+        }
+
+        // 24 - Fallback: use productNumber as alternative ID
+        if (!empty($productNumber)) {
+            $df024 = $doc->createElement('datafield');
+            $df024->setAttribute('tag', '024');
+            $df024->setAttribute('ind1', '8'); // Other standard number
+            $df024->setAttribute('ind2', ' ');
+            $sfA = $doc->createElement('subfield', $productNumber);
+            $sfA->setAttribute('code', 'a');
+            $df024->appendChild($sfA);
+            $sf2 = $doc->createElement('subfield', 'shopware');
+            $sf2->setAttribute('code', '2');
+            $df024->appendChild($sf2);
+            $record->appendChild($df024);
+        }
+
+        //##############################################################################
+        // 264 - Publication place ($a) and publisher ($b) with fallbacks
+        $publisher = trim($f['manufacturer']['translated']['name'] ?? '');
+        $place = trim($f['manufacturer']['translated']['customFields']['custom_manufacturer_oai_place'] ?? '');
+
+        // Apply fallbacks if empty
+        if ($publisher === '') {
+            $publisher = 'RKW Kompetenzzentrum';
+        }
+        if ($place === '') {
+            $place = 'Eschborn';
+        }
+
+        // Only create 264 if at least one of $a/$b will be non-empty
+        if ($publisher !== '' || $place !== '') {
+            $df264pb = $doc->createElement('datafield');
+            $df264pb->setAttribute('tag', '264');
+            $df264pb->setAttribute('ind1', ' ');
+            $df264pb->setAttribute('ind2', '1'); // 1 = publication
+
+            // $a = place of publication
+            if ($place !== '') {
+                $sfA = $doc->createElement('subfield', $place);
+                $sfA->setAttribute('code', 'a');
+                $df264pb->appendChild($sfA);
+            }
+
+            // $b = publisher
+            if ($publisher !== '') {
+                $sfB = $doc->createElement('subfield', $publisher);
+                $sfB->setAttribute('code', 'b');
+                $df264pb->appendChild($sfB);
+            }
+
+            $record->appendChild($df264pb);
+        }
+
+
+        //##############################################################################
+        // 506 Access rights (from customFields.custom_product_oai_access)
+        $access = trim($f['customFields']['custom_product_oai_access'] ?? '');
+        if ($access === '') {
+            $access = 'b'; // Fallback: restricted access
+        }
+
+        $df506 = $doc->createElement('datafield');
+        $df506->setAttribute('tag', '506');
+        $df506->setAttribute('ind1', ' ');
+        $df506->setAttribute('ind2', ' ');
+
+        // $f = access status code (e.g. a=open, b=restricted)
+        $sfF = $doc->createElement('subfield', $access);
+        $sfF->setAttribute('code', 'f');
+        $df506->appendChild($sfF);
+
+        // $2 = source of code list
+        $sf2 = $doc->createElement('subfield', 'local');
+        $sf2->setAttribute('code', '2');
+        $df506->appendChild($sf2);
+
+        $record->appendChild($df506);
+
+
+        //##############################################################################
         // 520 Summary/Abstract (prefer custom cover text)
-        $description = ($cf['custom_meta_covertext'] ?? '') ?: ($f['description'] ?? '');
+        $description = ($customFields['custom_meta_covertext'] ?? '') ?: ($f['description'] ?? '');
         if ($description !== '') {
             $df520 = $doc->createElement('datafield');
             $df520->setAttribute('tag', '520');
@@ -579,31 +750,20 @@ XML;
             $record->appendChild($df520);
         }
 
-        // 264 Publication year (from datestamp YYYY…)
-        if (!empty($f['datestamp'])) {
-            $year = substr((string)$f['datestamp'], 0, 4);
-            if (ctype_digit($year)) {
-                $df264 = $doc->createElement('datafield');
-                $df264->setAttribute('tag', '264');
-                $df264->setAttribute('ind1', ' ');
-                $df264->setAttribute('ind2', '1'); // 1 = publication
-                $sfC = $doc->createElement('subfield', $year);
-                $sfC->setAttribute('code', 'c');
-                $df264->appendChild($sfC);
-                $record->appendChild($df264);
-            }
-        }
 
+        //##############################################################################
         // 856 Electronic locations (product page URL + optional downloads)
         $urls = [];
         if (!empty($f['url'])) {
             $urls[] = (string)$f['url'];
         }
-        if (!empty($cf['custom_download_'])) {
-            $urls[] = (string)$cf['custom_download_'];
+        // @toDo: Field "custom_download_" is only ID so far
+        if (!empty($customFields['custom_download_'])) {
+            $urls[] = (string)$customFields['custom_download_'];
         }
-        if (!empty($cf['custom_bundle_file'])) {
-            $urls[] = (string)$cf['custom_bundle_file'];
+        // @toDo: Field "custom_bundle_file" is only ID so far
+        if (!empty($customFields['custom_bundle_file'])) {
+            $urls[] = (string)$customFields['custom_bundle_file'];
         }
         foreach (array_unique($urls) as $u) {
             if ($u === '') continue;
@@ -619,7 +779,7 @@ XML;
 
         // === Bundle relations ===
         // Child -> Parent (773)
-        $parentUuid = trim((string)($cf['custom_bundles_parent'] ?? ''));
+        $parentUuid = trim((string)($customFields['custom_bundles_parent'] ?? ''));
         if ($parentUuid !== '') {
             $df773 = $doc->createElement('datafield');
             $df773->setAttribute('tag', '773');
@@ -632,8 +792,8 @@ XML;
         }
 
         // Parent -> Children (774)
-        $isBundleActive = !empty($cf['custom_bundles_active']);
-        $childrenRaw    = (string)($cf['custom_bundles_products'] ?? '');
+        $isBundleActive = !empty($customFields['custom_bundles_active']);
+        $childrenRaw    = (string)($customFields['custom_bundles_products'] ?? '');
         $children       = $parseIdList($childrenRaw);
         if ($isBundleActive && !empty($children)) {
             foreach ($children as $kidUuid) {
@@ -730,22 +890,66 @@ XML;
         }
         */
 
-        /*
-        // 041 Language (optional, very rough; "deu" preferred in MARC; if you have 2-letter, map to 3-letter code)
-        if (!empty($f['language'])) {
-            $lang = $this->toMarcLang($f['language']); // crude helper below
-            if ($lang !== '') {
-                $df041 = $doc->createElement('datafield');
-                $df041->setAttribute('tag', '041');
-                $df041->setAttribute('ind1', ' ');
-                $df041->setAttribute('ind2', ' ');
-                $sfA = $doc->createElement('subfield', $lang);
-                $sfA->setAttribute('code', 'a');
-                $df041->appendChild($sfA);
-                $record->appendChild($df041);
+
+
+        //##############################################################################
+        // 041 Language (ISO 639-2, fallback 'ger')
+        // Source: customFields.custom_product_oai_language
+        $langRaw = $f['customFields']['custom_product_oai_language'] ?? '';
+
+        // Normalize to array of lowercased tokens
+        $tokens = [];
+        if (is_array($langRaw)) {
+            $tokens = $langRaw;
+        } elseif (is_string($langRaw)) {
+            // Split by comma/semicolon/whitespace
+            $tokens = preg_split('/[,\;\s]+/u', $langRaw, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        $tokens = array_map(static fn($v) => mb_strtolower(trim((string)$v), 'UTF-8'), $tokens);
+
+        // Mapping 2-letter -> ISO 639-2/B codes (use bibliographic forms to align with 'ger')
+        $map2to3 = [
+            'de' => 'ger', 'en' => 'eng', 'fr' => 'fre', 'es' => 'spa', 'it' => 'ita',
+            'nl' => 'dut', 'cs' => 'cze', 'sk' => 'slo', 'ro' => 'rum', 'alb' => 'alb', // edge cases if given
+            'pt' => 'por', 'ru' => 'rus', 'pl' => 'pol', 'da' => 'dan', 'sv' => 'swe',
+            'no' => 'nor', 'fi' => 'fin', 'hu' => 'hun', 'tr' => 'tur', 'el' => 'gre',
+            'zh' => 'chi', 'ja' => 'jpn', 'ko' => 'kor', 'ar' => 'ara',
+        ];
+
+        // Acceptable 3-letter pattern
+        $isThree = static fn(string $v) => (bool)preg_match('/^[a-z]{3}$/', $v);
+
+        // Convert tokens to 3-letter 639-2/B
+        $langs = [];
+        foreach ($tokens as $t) {
+            if ($t === '') { continue; }
+            if (isset($map2to3[$t])) {
+                $langs[] = $map2to3[$t];
+            } elseif ($isThree($t)) {
+                // Assume user already supplied a valid 3-letter code; keep as-is
+                $langs[] = $t;
             }
         }
-        */
+
+        // Apply fallback if nothing valid
+        if (!$langs) {
+            $langs = ['ger'];
+        }
+
+        // De-duplicate while preserving order
+        $langs = array_values(array_unique($langs));
+
+        // Emit 041 with one $a per language
+        $df041 = $doc->createElement('datafield');
+        $df041->setAttribute('tag', '041');
+        $df041->setAttribute('ind1', ' ');
+        $df041->setAttribute('ind2', ' ');
+        foreach ($langs as $code) {
+            $sfA = $doc->createElement('subfield', $code);
+            $sfA->setAttribute('code', 'a');
+            $df041->appendChild($sfA);
+        }
+        $record->appendChild($df041);
 
 
 

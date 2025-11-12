@@ -226,14 +226,13 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     <nav class="mt-4" aria-label="Shopware-Produktseiten">
         <ul class="pagination justify-content-center rkw-pagination">
 
-            <!-- Zurück -->
+            <!-- Back -->
             <li class="page-item <?= $currentPage <= 1 ? 'disabled' : '' ?>">
                 <a class="page-link" href="?<?= $queryBase ?>&page=<?= max(1, $currentPage - 1) ?>" aria-label="Zurück">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
 
-            <!-- Seitenzahlen (max. 5 anzeigen: zentriert um currentPage) -->
             <?php
             $start = max(1, $currentPage - 2);
             $end = min($maxPages, $currentPage + 2);
@@ -253,7 +252,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
             }
             ?>
 
-            <!-- Weiter -->
+            <!-- Next -->
             <li class="page-item <?= $currentPage >= $maxPages ? 'disabled' : '' ?>">
                 <a class="page-link" href="?<?= $queryBase ?>&page=<?= min($maxPages, $currentPage + 1) ?>" aria-label="Weiter">
                     <span aria-hidden="true">&raquo;</span>
@@ -262,7 +261,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
 
         </ul>
 
-        <!-- Info zur Trefferanzahl -->
+        <!-- Information about the number of hits -->
         <p class="text-center small text-muted">
             Seite <?= $currentPage ?> von <?= $maxPages ?> &middot;
             <?= $total ?> Produkt<?= $total === 1 ? '' : 'e' ?> gefunden
