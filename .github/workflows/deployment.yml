@@ -108,6 +108,10 @@ jobs:
             SHOPWARE_BASE_URL=${{ vars.SHOPWARE_BASE_URL }}
             SHOPWARE_CLIENT_ID=${{ secrets.SHOPWARE_CLIENT_ID }}
             SHOPWARE_CLIENT_SECRET=${{ secrets.SHOPWARE_CLIENT_SECRET }}
+            GATEKEEPER_ADMIN_USER=${{ vars.GATEKEEPER_ADMIN_USER }}
+            GATEKEEPER_ADMIN_PASS_HASH=${{ secrets.GATEKEEPER_ADMIN_PASS_HASH }}
+            GATEKEEPER_TOKEN_SECRET=${{ secrets.GATEKEEPER_TOKEN_SECRET }}
+            GATEKEEPER_TOKEN_TTL=${{ vars.GATEKEEPER_TOKEN_TTL }}
           "
 
       - name: Create shared symlinks and create missing folders

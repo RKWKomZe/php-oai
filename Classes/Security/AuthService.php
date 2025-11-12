@@ -8,10 +8,26 @@ namespace RKW\OaiConnector\Security;
  */
 final class AuthService
 {
+    /**
+     * @var string
+     */
     private string $adminUser;
+
+    /**
+     * @var string
+     */
     private string $adminPassHash;
+
+    /**
+     * @var TokenService
+     */
     private TokenService $tokens;
 
+    /**
+     * @param string $adminUser
+     * @param string $adminPassHash
+     * @param TokenService $tokens
+     */
     public function __construct(string $adminUser, string $adminPassHash, TokenService $tokens)
     {
         $this->adminUser = $adminUser;
@@ -19,16 +35,20 @@ final class AuthService
         $this->tokens = $tokens;
     }
 
-    // ---------- Public API ----------
 
-    /** Returns true if current session is authenticated. */
+    /**
+     * Returns true if the current session is authenticated.
+     */
     public function hasSessionAuth(): bool
     {
         $this->ensureSession();
         return isset($_SESSION['auth']['uid']);
     }
 
-    /** Try exchange of short-lived token (?login_token=...). Redirects on success. */
+
+    /**
+     * Try exchange of short-lived token (?login_token=...). Redirects on success.
+     */
     public function tryTokenLogin(): bool
     {
         $token = (string)($_GET['login_token'] ?? '');
@@ -48,7 +68,10 @@ final class AuthService
         return true; // execution already redirected
     }
 
-    /** Try HTTP Basic auth using server vars. */
+
+    /**
+     * Try HTTP Basic auth using server vars.
+     */
     public function tryHttpBasic(array $server): bool
     {
         if (isset($server['PHP_AUTH_USER'], $server['PHP_AUTH_PW'])) {
@@ -67,7 +90,10 @@ final class AuthService
         return false;
     }
 
-    /** Try form login (POST user/pass). */
+
+    /**
+     * Try form login (POST user/pass).
+     */
     public function tryFormLogin(array $post, array $server): bool
     {
         if (($server['REQUEST_METHOD'] ?? 'GET') !== 'POST') return false;
@@ -79,7 +105,10 @@ final class AuthService
         return $this->verifyPassword($u, $p);
     }
 
-    /** Render minimal HTML login form and exit. */
+
+    /**
+     * Render minimal HTML login form and exit.
+     */
     public function renderLogin(): void
     {
         http_response_code(401);
@@ -103,7 +132,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         exit;
     }
 
-    /** Destroy session and redirect to the same path (login screen). */
+
+    /**
+     * Destroy session and redirect to the same path (login screen).
+     */
     public function logout(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -118,8 +150,12 @@ button{margin-top:1rem;padding:.5rem .75rem}
         $this->redirectToPathOnly();
     }
 
-    // ---------- Internals ----------
 
+    /**
+     * @param string $user
+     * @param string $pass
+     * @return bool
+     */
     private function verifyPassword(string $user, string $pass): bool
     {
         if ($user !== $this->adminUser) {
@@ -134,6 +170,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         return true;
     }
 
+
+    /**
+     * @return void
+     */
     private function throttle(): void
     {
         $this->ensureSession();
@@ -144,6 +184,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         }
     }
 
+
+    /**
+     * @return void
+     */
     private function ensureSession(): void
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -156,6 +200,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         }
     }
 
+
+    /**
+     * @return void
+     */
     private function redirectToPathOnly(): void
     {
         $scheme = $this->scheme();
@@ -165,6 +213,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         exit;
     }
 
+
+    /**
+     * @return bool
+     */
     private function isHttps(): bool
     {
         if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return true;
@@ -172,6 +224,10 @@ button{margin-top:1rem;padding:.5rem .75rem}
         return false;
     }
 
+
+    /**
+     * @return string
+     */
     private function scheme(): string
     {
         return $this->isHttps() ? 'https' : 'http';

@@ -8,22 +8,37 @@ namespace RKW\OaiConnector\Security;
  */
 final class TokenService
 {
+    /**
+     * @var string
+     */
     private string $secret;
+
+    /**
+     * @var int|mixed
+     */
     private int $ttl;
 
+    /**
+     * @param string $secret
+     * @param int $ttl
+     */
     public function __construct(string $secret, int $ttl)
     {
         $this->secret = $secret;
         $this->ttl = max(1, $ttl);
     }
 
-    /** Returns full login link for convenience (optional helper). */
+
+    /**
+     * Returns full login link for convenience (optional helper).
+     */
     public function createLoginLink(string $baseUrl, string $userId = 'admin'): string
     {
         $payload = base64_encode(json_encode(['uid' => $userId, 'exp' => time() + $this->ttl]));
         $sig     = base64_encode(hash_hmac('sha256', $payload, $this->secret, true));
         return rtrim($baseUrl, '/') . '/index.php?login_token=' . urlencode($payload . '.' . $sig);
     }
+
 
     /**
      * Verifies token and returns payload array on success, or null on failure.

@@ -60,9 +60,7 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
 
 </div>
 
-<h3 class="mb-4">OAI Update Log</h3>
-
-
+<h3 class="mb-4">OAI Update Log (cbisiere/oai-pmh database)</h3>
 <table class="table table-sm table-bordered table-striped">
     <thead class="table-light">
     <tr>
@@ -91,6 +89,13 @@ $factOfTheDay = $oaiFacts[date('z') % count($oaiFacts)];
     <?php endforeach; ?>
     </tbody>
 </table>
+
+
+<h3 class="mb-4 pt-5">PHP Monolog INFO Log (last 20)</h3>
+<?php echo '<pre>' . htmlspecialchars(\RKW\OaiConnector\Utility\LogViewer::tailApp(20)) . '</pre>'; ?>
+
+<h3 class="mb-4 pt-5">PHP Monolog ERROR ⚠️ Log (last 10)</h3>
+<?php echo '<pre>' . htmlspecialchars(\RKW\OaiConnector\Utility\LogViewer::tailError(10)) . '</pre>'; ?>
 
 
 <!--

@@ -8,9 +8,14 @@ namespace RKW\OaiConnector\Security;
  */
 final class OaiRequestMatcher
 {
-    /** @var string[] */
+    /**
+     * @var string[]
+     */
     private array $verbs;
-    /** @var string[] */
+
+    /**
+     * @var string[]
+     */
     private array $allowedRepos;
 
     /**
@@ -22,6 +27,7 @@ final class OaiRequestMatcher
         $this->verbs = array_map('strtolower', $verbs);
         $this->allowedRepos = $allowedRepos;
     }
+
 
     /**
      * Public OAI if:

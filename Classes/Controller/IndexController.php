@@ -2,14 +2,9 @@
 
 namespace RKW\OaiConnector\Controller;
 
-use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
-use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\DbConnection;
-use RKW\OaiConnector\Utility\FlashMessage;
-use RKW\OaiConnector\Utility\Pagination;
-use RKW\OaiConnector\Utility\Redirect;
 
 /**
  * IndexController
@@ -18,15 +13,27 @@ use RKW\OaiConnector\Utility\Redirect;
  */
 class IndexController extends AbstractController
 {
+    /**
+     * @var OaiItemMetaRepository|null
+     */
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
 
+    /**
+     * @var OaiRepoRepository|null
+     */
     private ?OaiRepoRepository $repoRepository = null;
 
+    /**
+     * @return OaiItemMetaRepository
+     */
     protected function getOaiItemMetaRepository(): OaiItemMetaRepository
     {
         return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
     }
 
+    /**
+     * @return OaiRepoRepository
+     */
     protected function getRepoRepository(): OaiRepoRepository
     {
         return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);

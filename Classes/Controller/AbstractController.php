@@ -14,7 +14,14 @@ use RKW\OaiConnector\Utility\ConfigLoader;
  */
 abstract class AbstractController
 {
+    /**
+     * @var array|mixed[]
+     */
     protected array $settings = [];
+
+    /**
+     * @var PDO|null
+     */
     private ?PDO $pdo = null;
 
     /**

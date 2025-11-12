@@ -23,13 +23,16 @@ final class Gatekeeper
     private Headers $headers;
     private AuthService $auth;
 
+    /**
+     *  constructor
+     */
     public function __construct()
     {
         // Load config from your project
-        $cfg = ConfigLoader::load()['security']['gatekeeper'] ?? [];
+        $config = ConfigLoader::load()['security']['gatekeeper'] ?? [];
 
         // Fail fast on missing secrets
-        if (empty($cfg['adminPassHash']) || empty($cfg['tokenSecret'])) {
+        if (empty($config['adminPassHash']) || empty($config['tokenSecret'])) {
             throw new \RuntimeException(
                 'Gatekeeper: missing adminPassHash or tokenSecret in configuration.'
             );
@@ -37,7 +40,7 @@ final class Gatekeeper
 
         // Construct collaborators
         $this->matcher = new OaiRequestMatcher(
-        // allowed verbs
+            // allowed verbs
             [
                 'identify',
                 'listmetadataformats',
@@ -47,23 +50,29 @@ final class Gatekeeper
                 'getrecord'
             ],
             // allowed repos (empty array => allow all)
-            $cfg['allowedRepos'] ?? []
+            $config['allowedRepos'] ?? []
         );
 
         $this->headers = new Headers();
 
         $tokenService = new TokenService(
-            (string)$cfg['tokenSecret'],
-            (int)($cfg['tokenTtl'] ?? 900)
+            (string)$config['tokenSecret'],
+            (int)($config['tokenTtl'] ?? 900)
         );
 
         $this->auth = new AuthService(
-            (string)($cfg['adminUser'] ?? 'admin'),
-            (string)$cfg['adminPassHash'],
+            (string)($config['adminUser'] ?? 'admin'),
+            (string)$config['adminPassHash'],
             $tokenService
         );
     }
 
+
+    /**
+     * handle auth actions
+     *
+     * @return void
+     */
     public function handle(): void
     {
         // Security headers for all requests

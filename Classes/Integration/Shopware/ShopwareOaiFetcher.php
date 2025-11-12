@@ -4,8 +4,8 @@ namespace RKW\OaiConnector\Integration\Shopware;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Utility\ConfigLoader;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Class ShopwareOaiFetcher
@@ -14,9 +14,25 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class ShopwareOaiFetcher
 {
+    /**
+     * @var string|mixed
+     */
     private string $baseUrl;
+
+    /**
+     * @var string|mixed
+     */
     private string $clientId;
+
+    /**
+     * @var string|mixed
+     */
     private string $clientSecret;
+
+    /**
+     * @var ?LoggerFactory|null
+     */
+    private \Psr\Log\LoggerInterface|null|LoggerFactory $logger = null;
 
     /**
      * constructor
@@ -28,6 +44,8 @@ class ShopwareOaiFetcher
         $this->baseUrl = $config['api']['shopware']['baseUrl'];
         $this->clientId = $config['api']['shopware']['clientId'];
         $this->clientSecret = $config['api']['shopware']['clientSecret'];
+
+        $this->logger = LoggerFactory::get();
     }
 
 
@@ -37,6 +55,7 @@ class ShopwareOaiFetcher
      * @param array $filterOptions Options to filter the products.
      * @param bool $returnRawDataArray Determines whether to return the raw product data array or transformed records.
      * @return array The processed list of products, either raw or transformed.
+     * @throws GuzzleException
      */
     public function fetchAndTransform(array $filterOptions = [], bool $returnRawDataArray = false): array
     {
@@ -176,10 +195,10 @@ class ShopwareOaiFetcher
      * @param string $accessToken The access token used for authentication with the API.
      * @param array $filterOptions An array of filter options for fetching products, such as date ranges.
      *
-     * @return array The decoded JSON response containing the list of products.
+     * @return array|null The decoded JSON response containing the list of products.
      * @throws GuzzleException
      */
-    protected function fetchProducts(string $accessToken, array $filterOptions): array
+    protected function fetchProducts(string $accessToken, array $filterOptions): ?array
     {
 
         #$url = $this->baseUrl . '/api/product';
@@ -221,23 +240,56 @@ class ShopwareOaiFetcher
             ? (int) $_GET['limit']
             : 25;
 
-        $response = $client->post('/api/search/product', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Accept' => 'application/json',
-            ],
-            'json' => [
-                'associations' => [
-                    'cover' => ['associations' => ['media' => []]],
-                ],
-                'filter' => $filters,
-                'limit' => $limit,
-                'page' => $page,
-                'sort' => [['field' => 'createdAt', 'order' => 'DESC']],
-                'total-count-mode' => 1,
-            ]
-        ]);
 
-        return json_decode($response->getBody(), true);
+        $this->logger->info('Start Shopware fetch', ['endpoint' => $url]);
+
+        $response = null;
+
+        try {
+            $response = $client->post('/api/search/product', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                    'Accept' => 'application/json',
+                ],
+                'json' => [
+                    'associations' => [
+                        'cover' => ['associations' => ['media' => []]],
+                    ],
+                    'filter' => $filters,
+                    'limit' => $limit,
+                    'page' => $page,
+                    'sort' => [['field' => 'createdAt', 'order' => 'DESC']],
+                    'total-count-mode' => 1,
+                ]
+            ]);
+        } catch (GuzzleException $e) {
+            // catches all connection/timeouts/etc.
+            $this->logger->error('Shopware API request failed', [
+                'error' => $e->getMessage(),
+            ]);
+        } catch (\Throwable $e) {
+            // final safeguard (unexpected runtime errors)
+            $this->logger->critical('Unexpected error in Shopware request', [
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+
+        // if we got here, $response is guaranteed to be set
+        try {
+            $body = (string)$response->getBody();
+            if ($body === '') {
+                $this->logger->warning('Shopware API returned empty body');
+                return null;
+            }
+
+            return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+
+        } catch (\JsonException $e) {
+            $this->logger->error('Shopware API returned invalid JSON', [
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }

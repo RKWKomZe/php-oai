@@ -1,7 +1,8 @@
 <?php
 
+
 use RKW\OaiConnector\Controller\ErrorController;
-use RKW\OaiConnector\Utility\FlashMessage;
+use RKW\OaiConnector\Factory\LoggerFactory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -9,6 +10,18 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 
 try {
+
+    // ### LOGGING ###
+
+    // Define path once, e.g. /var/log relative to project root
+    $logDir = __DIR__ . '/../logs';
+
+    // Initialize global Monolog instance
+    LoggerFactory::init($logDir, 'oai-app');
+
+
+    // ### ROUTING ###
+
     // Sanitize controller/action input
     $controllerName = ucfirst(isset($_GET['controller']) ? preg_replace('/[^a-zA-Z0-9]/', '', $_GET['controller']) : 'Index');
     $actionName = isset($_GET['action']) ? preg_replace('/[^a-zA-Z0-9]/', '', $_GET['action']) : 'index';
@@ -20,18 +33,18 @@ try {
         $controller = new $controllerClass();
 
         if (!$controller instanceof \RKW\OaiConnector\Controller\AbstractController) {
-            (new ErrorController())->forbidden('Ungültiger Controller-Typ: ' . $controllerClass);
+            (new ErrorController())->forbidden('Invalid controller type: ' . $controllerClass);
             exit;
         }
         if (method_exists($controller, $actionName)) {
             $controller->$actionName();
             exit;
         } else {
-            (new ErrorController())->notFound('Die Aktion "' . $actionName . '" existiert nicht im Controller "' . $controllerName . '".');
+            (new ErrorController())->notFound('The action "' . $actionName . '" does not exist in the controller "' . $controllerName . '".');
             exit;
         }
     } else {
-        (new ErrorController())->notFound('Controller "' . $controllerClass . '" existiert nicht.');
+        (new ErrorController())->notFound('Controller "' . $controllerClass . '" does not exist.');
         exit;
     }
 } catch (\Throwable $e) {
