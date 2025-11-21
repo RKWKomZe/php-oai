@@ -8,20 +8,24 @@ namespace RKW\OaiConnector\Security;
  */
 final class AuthService
 {
+
     /**
      * @var string
      */
     private string $adminUser;
+
 
     /**
      * @var string
      */
     private string $adminPassHash;
 
+
     /**
      * @var TokenService
      */
     private TokenService $tokens;
+
 
     /**
      * @param string $adminUser

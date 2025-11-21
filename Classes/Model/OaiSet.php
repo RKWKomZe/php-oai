@@ -9,12 +9,14 @@ namespace RKW\OaiConnector\Model;
  */
 class OaiSet
 {
+
     /**
      * repo
      *
      * @var string
      */
     protected string $repo;
+
 
     /**
      * setSpec
@@ -23,12 +25,14 @@ class OaiSet
      */
     protected string $setSpec = '';
 
+
     /**
      * setName
      *
      * @var string
      */
     protected string $setName = '';
+
 
     /**
      * rank
@@ -37,12 +41,14 @@ class OaiSet
      */
     protected int $rank = 0;
 
+
     /**
      * comment
      *
      * @var string|null
      */
     protected ?string $comment = null;
+
 
     /**
      * updated
@@ -62,6 +68,7 @@ class OaiSet
     {
         return $this->repo;
     }
+
 
     /**
      * Sets repo
@@ -85,6 +92,7 @@ class OaiSet
         return $this->setSpec;
     }
 
+
     /**
      * Sets setSpec
      *
@@ -106,6 +114,7 @@ class OaiSet
     {
         return $this->setName;
     }
+
 
     /**
      * Sets setName
@@ -151,6 +160,7 @@ class OaiSet
         return $this->comment;
     }
 
+
     /**
      * Sets comment
      *
@@ -172,6 +182,7 @@ class OaiSet
     {
         return $this->updated;
     }
+
 
     /**
      * Sets updated

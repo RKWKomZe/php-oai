@@ -27,17 +27,4 @@ class OaiSetRepository extends AbstractRepository
      */
     protected ?string $tableName = 'oai_set';
 
-    /**
-     * Gets the column name used for repository filtering
-     *
-     * @return string
-     */
-    protected function getRepoColumnName(): string
-    {
-        return 'repo';
-    }
-
-
-
-
 }

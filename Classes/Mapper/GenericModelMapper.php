@@ -1,4 +1,5 @@
 <?php
+
 namespace RKW\OaiConnector\Mapper;
 
 use ReflectionClass;
@@ -26,6 +27,7 @@ class GenericModelMapper
      */
     public static function map(array $data, string $modelClass): object
     {
+
         if (!class_exists($modelClass)) {
             throw new \InvalidArgumentException("Class $modelClass does not exist.");
         }
@@ -42,5 +44,7 @@ class GenericModelMapper
         }
 
         return $instance;
+
     }
+
 }

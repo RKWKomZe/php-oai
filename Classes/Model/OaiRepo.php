@@ -9,12 +9,14 @@ namespace RKW\OaiConnector\Model;
  */
 class OaiRepo
 {
+
     /**
      * id
      *
      * @var string
      */
     protected string $id = '';
+
 
     /**
      * repositoryName
@@ -23,12 +25,14 @@ class OaiRepo
      */
     protected string $repositoryName = '';
 
+
     /**
      * baseURL
      *
      * @var string
      */
     protected string $baseURL = '';
+
 
     /**
      * protocolVersion
@@ -37,6 +41,7 @@ class OaiRepo
      */
     protected string $protocolVersion = '';
 
+
     /**
      * adminEmails
      *
@@ -44,12 +49,14 @@ class OaiRepo
      */
     protected string $adminEmails = '';
 
+
     /**
      * earliestDatestamp
      *
      * @var string
      */
     protected string $earliestDatestamp = '';
+
 
     /**
      * deletedRecord
@@ -59,6 +66,7 @@ class OaiRepo
      */
     protected string $deletedRecord = 'no';
 
+
     /**
      * granularity
      * Possible values: 'YYYY-MM-DD' or 'YYYY-MM-DDThh:mm:ssZ'
@@ -67,12 +75,14 @@ class OaiRepo
      */
     protected string $granularity = 'YYYY-MM-DD';
 
+
     /**
      * maxListSize
      *
      * @var int|null
      */
     protected ?int $maxListSize = null;
+
 
     /**
      * tokenDuration
@@ -81,6 +91,7 @@ class OaiRepo
      */
     protected ?int $tokenDuration = null;
 
+
     /**
      * updated
      *
@@ -88,13 +99,13 @@ class OaiRepo
      */
     protected string $updated = '';
 
+
     /**
      * comment
      *
      * @var string
      */
     protected string $comment = '';
-
 
 
     /**
@@ -106,6 +117,7 @@ class OaiRepo
     {
         return $this->id;
     }
+
 
     /**
      * Sets id
@@ -129,6 +141,7 @@ class OaiRepo
         return $this->repositoryName;
     }
 
+
     /**
      * Sets repository name
      *
@@ -150,6 +163,7 @@ class OaiRepo
     {
         return $this->baseURL;
     }
+
 
     /**
      * Sets base URL
@@ -173,6 +187,7 @@ class OaiRepo
         return $this->protocolVersion;
     }
 
+
     /**
      * Sets protocol version
      *
@@ -194,6 +209,7 @@ class OaiRepo
     {
         return $this->adminEmails;
     }
+
 
     /**
      * Sets admin emails
@@ -217,6 +233,7 @@ class OaiRepo
         return $this->earliestDatestamp;
     }
 
+
     /**
      * Sets earliest datestamp
      *
@@ -238,6 +255,7 @@ class OaiRepo
     {
         return $this->deletedRecord;
     }
+
 
     /**
      * Sets deleted record
@@ -261,6 +279,7 @@ class OaiRepo
         return $this->granularity;
     }
 
+
     /**
      * Sets granularity
      *
@@ -282,6 +301,7 @@ class OaiRepo
     {
         return $this->maxListSize;
     }
+
 
     /**
      * Sets max list size
@@ -305,6 +325,7 @@ class OaiRepo
         return $this->tokenDuration;
     }
 
+
     /**
      * Sets token duration
      *
@@ -326,6 +347,7 @@ class OaiRepo
     {
         return $this->updated;
     }
+
 
     /**
      * Sets updated
@@ -353,6 +375,7 @@ class OaiRepo
     {
         return $this->comment;
     }
+
 
     /**
      * Sets comment

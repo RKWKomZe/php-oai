@@ -39,14 +39,14 @@ try {
         if (method_exists($controller, $actionName)) {
             $controller->$actionName();
             exit;
-        } else {
-            (new ErrorController())->notFound('The action "' . $actionName . '" does not exist in the controller "' . $controllerName . '".');
-            exit;
         }
-    } else {
-        (new ErrorController())->notFound('Controller "' . $controllerClass . '" does not exist.');
+
+        (new ErrorController())->notFound('The action "' . $actionName . '" does not exist in the controller "' . $controllerName . '".');
         exit;
     }
+
+    (new ErrorController())->notFound('Controller "' . $controllerClass . '" does not exist.');
+    exit;
 } catch (\Throwable $e) {
     /*
     // @toDo: Problem mit Template-Dopplung und bzw. crash, wenn Template bereits includiert (include_once wäre nur Symptombehandlung)

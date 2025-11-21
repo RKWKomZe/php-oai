@@ -13,14 +13,18 @@ use RKW\OaiConnector\Repository\OaiSetRepository;
  */
 class ToolController extends AbstractController
 {
+
     private ?OaiSetRepository $oaiSetRepository = null;
 
+
     private ?OaiRepoRepository $oaiRepoRepository = null;
+
 
     protected function getOaiSetRepository(): OaiSetRepository
     {
         return $this->oaiSetRepository ??= new OaiSetRepository();
     }
+
 
     protected function getOaiRepoRepository(): OaiRepoRepository
     {
@@ -45,19 +49,23 @@ class ToolController extends AbstractController
      */
     public function query(): void
     {
+
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
         $repoSetList = $this->oaiSetRepository->withModels()->findAll();
 
         $setsByRepo = [];
         foreach ($repoSetList as $repoSet) {
-            $setsByRepo[$repoSet->getRepo()][] = ['setSpec' => $repoSet->getSetSpec(), 'setName' => $repoSet->getSetName()];
-
+            $setsByRepo[$repoSet->getRepo()][] = [
+                'setSpec' => $repoSet->getSetSpec(),
+                'setName' => $repoSet->getSetName()
+            ];
         }
 
         $this->render('query', [
             'repoList' => $repoList,
             'setsByRepo' => $setsByRepo,
         ]);
+
     }
 
 
@@ -66,6 +74,7 @@ class ToolController extends AbstractController
      */
     public function fullImport(): void
     {
-        $this->render('fullImport', []);
+        $this->render('fullImport');
     }
+
 }

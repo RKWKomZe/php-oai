@@ -10,12 +10,26 @@ namespace RKW\OaiConnector\Utility;
 class FlashMessage
 {
     public const TYPE_PRIMARY   = 'primary';
+
+
     public const TYPE_SECONDARY = 'secondary';
+
+
     public const TYPE_SUCCESS   = 'success';
+
+
     public const TYPE_DANGER    = 'danger';
+
+
     public const TYPE_WARNING   = 'warning';
+
+
     public const TYPE_INFO      = 'info';
+
+
     public const TYPE_LIGHT     = 'light';
+
+
     public const TYPE_DARK      = 'dark';
 
 
@@ -55,6 +69,7 @@ class FlashMessage
         unset($_SESSION['flash_messages']);
         return $messages;
     }
+
 
     /**
      * Checks whether there are any flash messages stored in the session.

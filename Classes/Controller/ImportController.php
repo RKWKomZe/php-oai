@@ -5,7 +5,6 @@ namespace RKW\OaiConnector\Controller;
 use GuzzleHttp\Exception\GuzzleException;
 use Psr\Log\LoggerInterface;
 use RKW\OaiConnector\Factory\LoggerFactory;
-use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiFetcher;
 use RKW\OaiConnector\Integration\Shopware\ShopwareOaiUpdater;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
@@ -24,50 +23,29 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class ImportController extends AbstractController
 {
+
+    /**
+     * @var ?LoggerInterface|LoggerFactory|null
+     */
+    private LoggerInterface|null|LoggerFactory $logger = null;
+
+
     /**
      * @var OaiItemMetaRepository|null
      */
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
+
 
     /**
      * @var OaiRepoRepository|null
      */
     private ?OaiRepoRepository $repoRepository = null;
 
+
     /**
      * @var OaiMetaRepository|null
      */
     private ?OaiMetaRepository $oaiMetaRepository = null;
-
-    /**
-     * @return OaiItemMetaRepository
-     */
-    protected function getOaiItemMetaRepository(): OaiItemMetaRepository
-    {
-        return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
-    }
-
-    /**
-     * @return OaiRepoRepository
-     */
-    protected function getRepoRepository(): OaiRepoRepository
-    {
-        return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);
-    }
-
-    /**
-     * @return OaiMetaRepository
-     */
-    protected function getOaiMetaRepository(): OaiMetaRepository
-    {
-        return $this->oaiMetaRepository ??= new OaiMetaRepository($this->settings['oai']['defaultRepoId']);
-    }
-
-
-    /**
-     * @var ?LoggerInterface|LoggerFactory|null
-     */
-    private LoggerInterface|null|LoggerFactory $logger = null;
 
 
     /**
@@ -81,6 +59,33 @@ class ImportController extends AbstractController
         $this->oaiMetaRepository = $this->getOaiMetaRepository();
 
         $this->logger = LoggerFactory::get();
+    }
+
+
+    /**
+     * @return OaiItemMetaRepository
+     */
+    protected function getOaiItemMetaRepository(): OaiItemMetaRepository
+    {
+        return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
+    }
+
+
+    /**
+     * @return OaiRepoRepository
+     */
+    protected function getRepoRepository(): OaiRepoRepository
+    {
+        return $this->repoRepository ??= new OaiRepoRepository($this->settings['oai']['defaultRepoId']);
+    }
+
+
+    /**
+     * @return OaiMetaRepository
+     */
+    protected function getOaiMetaRepository(): OaiMetaRepository
+    {
+        return $this->oaiMetaRepository ??= new OaiMetaRepository($this->settings['oai']['defaultRepoId']);
     }
 
 
@@ -148,6 +153,7 @@ class ImportController extends AbstractController
         $existingIdentifiers = $this->oaiItemMetaRepository->findByIdList($activeRepoId, $prefixedIds);
 
         // filter
+        /* @todo: Is this filter necessary? Or can it be removed? *&
         /*
         $unimportedProducts = array_filter($dataRequest['data'], function ($product) use ($existingIdentifiers, $activeRepoId) {
             return !in_array("oai:$activeRepoId:" . $product['id'], $existingIdentifiers, true);
@@ -204,7 +210,9 @@ class ImportController extends AbstractController
      */
     public function importOne(): void
     {
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
         $identifier = $_GET['id'] ?? null;
         $repoId = $_GET['repo'] ?? null;
@@ -248,13 +256,13 @@ class ImportController extends AbstractController
             $updater->run(['all'], [$metadataPrefix]);
         } catch (\Throwable $e) {
 
+            // @todo: Please check this safeguard.
             // @toDo: Fehlermeldung wird von Library selbst schon abefangen, falls etwa SQL-Daten falsch. Dieser catch
             // ... "catcht" also zumindest teilweise nicht
             $this->logger->critical('Unexpected error while writing records to database:', [
                 'error' => $e->getMessage(),
             ]);
         }
-
 
         // check for errors
         $stmt = $pdo->prepare('
@@ -278,12 +286,11 @@ class ImportController extends AbstractController
             header('Content-Type: application/json');
             echo json_encode(['success' => true]);
             exit;
-        } else {
-
-            FlashMessage::add("Produkt erfolgreich importiert.", FlashMessage::TYPE_SUCCESS);
-
-            Redirect::to('list', 'import');
         }
+
+        /* @todo: Maybe provide a translation file to collect messages there */
+        FlashMessage::add("Produkt erfolgreich importiert.", FlashMessage::TYPE_SUCCESS);
+        Redirect::to('list', 'import');
 
     }
 
@@ -349,8 +356,8 @@ class ImportController extends AbstractController
         }
 
         FlashMessage::add(count($records) . ' Products successfully imported.', FlashMessage::TYPE_SUCCESS);
-
         Redirect::to('fullImport', 'Tool');
+
     }
 
 }

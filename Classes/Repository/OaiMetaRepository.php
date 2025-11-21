@@ -5,11 +5,13 @@ namespace RKW\OaiConnector\Repository;
 
 use RKW\OaiConnector\Model\OaiMeta;
 
+
 /**
  * OaiMetaRepository
  */
 class OaiMetaRepository extends AbstractRepository
 {
+
     /**
      * modelClass
      * Fully qualified model class name, defaults to OaiMeta::class
@@ -18,6 +20,7 @@ class OaiMetaRepository extends AbstractRepository
      */
     protected ?string $modelClass = OaiMeta::class;
 
+
     /**
      * tableName
      * Database table name, defaults to 'oai_meta'
@@ -25,16 +28,5 @@ class OaiMetaRepository extends AbstractRepository
      * @var string|null
      */
     protected ?string $tableName = 'oai_meta';
-
-
-    /**
-     * Gets the column name used for repository filtering
-     */
-    protected function getRepoColumnName(): string
-    {
-        return 'repo';
-    }
-
-
 
 }

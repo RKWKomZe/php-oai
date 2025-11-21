@@ -9,12 +9,14 @@ namespace RKW\OaiConnector\Model;
  */
 class OaiMeta
 {
+
     /**
      * repo
      *
      * @var string
      */
     protected string $repo = '1';
+
 
     /**
      * metadataPrefix
@@ -23,12 +25,14 @@ class OaiMeta
      */
     protected string $metadataPrefix = '';
 
+
     /**
      * schema
      *
      * @var string
      */
     protected string $schema = '';
+
 
     /**
      * metadataNamespace
@@ -37,12 +41,14 @@ class OaiMeta
      */
     protected string $metadataNamespace = '';
 
+
     /**
      * comment
      *
      * @var string
      */
-    protected ?string $comment = '';
+    protected string $comment = '';
+
 
     /**
      * updated
@@ -61,6 +67,7 @@ class OaiMeta
     {
         return $this->repo;
     }
+
 
     /**
      * Sets repo
@@ -84,6 +91,7 @@ class OaiMeta
         return $this->metadataPrefix;
     }
 
+
     /**
      * Sets metadata prefix
      *
@@ -106,6 +114,7 @@ class OaiMeta
         return $this->schema;
     }
 
+
     /**
      * Sets schema
      *
@@ -127,6 +136,7 @@ class OaiMeta
     {
         return $this->metadataNamespace;
     }
+
 
     /**
      * Sets metadata namespace
@@ -171,6 +181,7 @@ class OaiMeta
     {
         return $this->updated;
     }
+
 
     /**
      * Sets updated

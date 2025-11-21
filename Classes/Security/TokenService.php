@@ -8,15 +8,18 @@ namespace RKW\OaiConnector\Security;
  */
 final class TokenService
 {
+
     /**
      * @var string
      */
     private string $secret;
 
+
     /**
      * @var int|mixed
      */
     private int $ttl;
+
 
     /**
      * @param string $secret
@@ -64,4 +67,5 @@ final class TokenService
 
         return $data;
     }
+
 }

@@ -17,6 +17,7 @@ class OaiSetDescriptionRepository extends AbstractRepository
      */
     protected ?string $modelClass = OaiSetDescription::class;
 
+
     /**
      * tableName
      * Database table name, defaults to 'oai_set_description'
@@ -24,16 +25,6 @@ class OaiSetDescriptionRepository extends AbstractRepository
      * @var string|null
      */
     protected ?string $tableName = 'oai_set_description';
-
-    /**
-     * Gets the column name used for repository filtering
-     *
-     * @return string
-     */
-    protected function getRepoColumnName(): string
-    {
-        return 'repo';
-    }
 
 
 }

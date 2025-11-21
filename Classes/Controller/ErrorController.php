@@ -8,6 +8,7 @@ namespace RKW\OaiConnector\Controller;
  */
 class ErrorController extends AbstractController
 {
+
     /**
      * Show a 404 not found error.
      *
@@ -40,4 +41,5 @@ class ErrorController extends AbstractController
         http_response_code(500);
         $this->render('internal', ['message' => $message]);
     }
+
 }

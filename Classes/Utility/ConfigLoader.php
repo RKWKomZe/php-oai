@@ -11,6 +11,7 @@ use mysqli;
  */
 class ConfigLoader
 {
+
     /**
      * config
      * Holds the static configuration array

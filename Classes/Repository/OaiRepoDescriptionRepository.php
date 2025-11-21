@@ -9,6 +9,7 @@ use RKW\OaiConnector\Model\OaiRepoDescription;
  */
 class OaiRepoDescriptionRepository extends AbstractRepository
 {
+
     /**
      * modelClass
      * Fully qualified model class name, defaults to OaiRepoDescription::class
@@ -17,6 +18,7 @@ class OaiRepoDescriptionRepository extends AbstractRepository
      */
     protected ?string $modelClass = OaiRepoDescription::class;
 
+
     /**
      * tableName
      * Database table name, defaults to 'oai_repo_description'
@@ -24,16 +26,6 @@ class OaiRepoDescriptionRepository extends AbstractRepository
      * @var string|null
      */
     protected ?string $tableName = 'oai_repo_description';
-
-    /**
-     * Gets the column name used for repository filtering
-     *
-     * @return string
-     */
-    protected function getRepoColumnName(): string
-    {
-        return 'repo';
-    }
 
 }
 

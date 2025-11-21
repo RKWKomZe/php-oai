@@ -2,9 +2,8 @@
 
 namespace RKW\OaiConnector\Controller;
 
-use RKW\OaiConnector\Model\OaiSet;
-use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Mapper\GenericModelMapper;
+use RKW\OaiConnector\Model\OaiSet;
 use RKW\OaiConnector\Model\OaiSetDescription;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Repository\OaiSetDescriptionRepository;
@@ -19,21 +18,27 @@ use RKW\OaiConnector\Utility\Redirect;
  */
 class SetController extends AbstractController
 {
+
     private ?OaiSetRepository $oaiSetRepository = null;
+
 
     private ?OaiSetDescriptionRepository $oaiSetDescriptionRepository = null;
 
+
     private ?OaiRepoRepository $oaiRepoRepository = null;
+
 
     protected function getOaiSetRepository(): OaiSetRepository
     {
         return $this->oaiSetRepository ??= new OaiSetRepository();
     }
 
+
     protected function getOaiSetDescriptionRepository(): OaiSetDescriptionRepository
     {
         return $this->oaiSetDescriptionRepository ??= new OaiSetDescriptionRepository();
     }
+
 
     protected function getOaiRepoRepository(): OaiRepoRepository
     {
@@ -45,10 +50,12 @@ class SetController extends AbstractController
      */
     public function __construct()
     {
+
         parent::__construct();
         $this->oaiSetRepository = $this->getOaiSetRepository();
         $this->oaiSetDescriptionRepository = $this->getOaiSetDescriptionRepository();
         $this->oaiRepoRepository = $this->getOaiRepoRepository();
+
     }
 
 
@@ -79,7 +86,6 @@ class SetController extends AbstractController
         if (!$setSpec || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Set');
-            return;
         }
 
         $oaiSet = $this->oaiSetRepository
@@ -93,10 +99,12 @@ class SetController extends AbstractController
         if (!$oaiSet) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
             Redirect::to('list', 'Set');
-            return;
         }
 
-        $oaiSetDescription = $this->oaiSetDescriptionRepository->withModels()->findOneBy(['repo' => $oaiSet->getRepo(), 'setSpec' => $oaiSet->getSetSpec()]);
+        $oaiSetDescription = $this->oaiSetDescriptionRepository->withModels()->findOneBy([
+            'repo' => $oaiSet->getRepo(),
+            'setSpec' => $oaiSet->getSetSpec()
+        ]);
 
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
 
@@ -107,6 +115,7 @@ class SetController extends AbstractController
             'repoList' => $repoList,
             'oaiSetDescription' => $oaiSetDescription,
         ]);
+
     }
 
 
@@ -115,12 +124,14 @@ class SetController extends AbstractController
      */
     public function new(): void
     {
+
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
         $this->render('new', [
             'repoList' => $repoList,
             'oaiSet' => new OaiSet(),
             'oaiSetDescription' => new OaiSetDescription(),
         ]);
+
     }
 
 
@@ -128,9 +139,12 @@ class SetController extends AbstractController
      * Creates a new OAI set and its corresponding description.
      * Maps user input to the appropriate models, updates timestamps, and saves both the set and description.
      * Displays a success or failure message and redirects to the appropriate page based on the outcome.
+     *
+     * @throws \ReflectionException
      */
     public function create(): void
     {
+
         $oaiSet = GenericModelMapper::map($_POST, OaiSet::class);
         $oaiSetDescription = GenericModelMapper::map($_POST, OaiSetDescription::class);
 
@@ -138,16 +152,19 @@ class SetController extends AbstractController
         $oaiSetDescription->setUpdated(date('Y-m-d H:i:s'));
 
         $success = $this->oaiSetRepository->insert($oaiSet);
-
         $this->oaiSetDescriptionRepository->upsert($oaiSetDescription);
 
-        if ($success) {
-            FlashMessage::add('Set created successfully.',  FlashMessage::TYPE_SUCCESS);
-            Redirect::to('show', 'Set', ['spec'  => $oaiSet->getSetSpec(), 'repo' => $oaiSet->getRepo()]);
-        } else {
+        if (!$success) {
             FlashMessage::add('Set could not be saved.',   FlashMessage::TYPE_DANGER);
             Redirect::to('new', 'Set');
         }
+
+        FlashMessage::add('Set created successfully.',  FlashMessage::TYPE_SUCCESS);
+        Redirect::to('show', 'Set', [
+            'spec'  => $oaiSet->getSetSpec(),
+            'repo' => $oaiSet->getRepo()
+        ]);
+
     }
 
 
@@ -166,7 +183,6 @@ class SetController extends AbstractController
         if (!$setSpec || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Set');
-            return;
         }
 
         $oaiSet = $this->oaiSetRepository->withModels()->findOneBy([
@@ -175,7 +191,6 @@ class SetController extends AbstractController
         ]);
 
         $oaiSetDescription = $this->oaiSetDescriptionRepository->withModels()->findOneBy(['repo' => $oaiSet->getRepo(), 'setSpec' => $oaiSet->getSetSpec()]);
-
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
 
         $this->render('edit', [
@@ -183,6 +198,7 @@ class SetController extends AbstractController
             'repoList' => $repoList,
             'oaiSetDescription' => $oaiSetDescription,
         ]);
+
     }
 
 
@@ -192,21 +208,27 @@ class SetController extends AbstractController
      * Maps the POST parameters to the corresponding OAI set and description models,
      * updates the set's last modified timestamp, and performs repository operations
      * to save the changes. A success message is then added, and a redirect is triggered.
+     *
+     * @throws \ReflectionException
      */
     public function update(): void
     {
+
         $oaiSet = GenericModelMapper::map($_POST, OaiSet::class);
         $oaiSetDescription = GenericModelMapper::map($_POST, OaiSetDescription::class);
 
         $oaiSet->setUpdated(date('Y-m-d H:i:s'));
         $oaiSetDescription->setUpdated(date('Y-m-d H:i:s'));
-        $this->oaiSetRepository->update($oaiSet, ['setSpec', 'repo']);
 
+        $this->oaiSetRepository->update($oaiSet, ['setSpec', 'repo']);
         $this->oaiSetDescriptionRepository->upsert($oaiSetDescription);
 
         FlashMessage::add('Datensatz erfolgreich bearbeitet.', FlashMessage::TYPE_SUCCESS);
+        Redirect::to('show', 'Set', [
+            'spec' => $oaiSet->getSetSpec(),
+            'repo' => $oaiSet->getRepo()
+        ]);
 
-        Redirect::to('show', 'Set', ['spec' => $oaiSet->getSetSpec(), 'repo' => $oaiSet->getRepo()]);
     }
 
 
@@ -229,7 +251,6 @@ class SetController extends AbstractController
         if (!$setSpec || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Set');
-            return;
         }
 
         // deleteDescription
@@ -248,9 +269,8 @@ class SetController extends AbstractController
         $this->oaiSetRepository->delete($oaiSet, ['setSpec', 'repo']);
 
         FlashMessage::add('Datensatz gelöscht.', FlashMessage::TYPE_SUCCESS);
-
         Redirect::to('list', 'Set');
-    }
 
+    }
 
 }
