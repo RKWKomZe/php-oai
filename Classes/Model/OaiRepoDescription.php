@@ -9,12 +9,14 @@ namespace RKW\OaiConnector\Model;
  */
 class OaiRepoDescription
 {
+
     /**
      * repo
      *
      * @var string
      */
     protected string $repo;
+
 
     /**
      * description
@@ -23,6 +25,7 @@ class OaiRepoDescription
      */
     protected string $description = '';
 
+
     /**
      * rank
      *
@@ -30,12 +33,14 @@ class OaiRepoDescription
      */
     protected int $rank = 0;
 
+
     /**
      * updated
      *
      * @var string|null
      */
     protected ?string $updated = null;
+
 
     /**
      * comment
@@ -54,6 +59,7 @@ class OaiRepoDescription
     {
         return $this->repo;
     }
+
 
     /**
      * Sets repo
@@ -77,6 +83,7 @@ class OaiRepoDescription
         return $this->description;
     }
 
+
     /**
      * Sets description
      *
@@ -98,6 +105,7 @@ class OaiRepoDescription
     {
         return $this->rank;
     }
+
 
     /**
      * Sets rank
@@ -121,6 +129,7 @@ class OaiRepoDescription
         return $this->updated;
     }
 
+
     /**
      * Sets updated
      *
@@ -142,6 +151,7 @@ class OaiRepoDescription
     {
         return $this->comment;
     }
+
 
     /**
      * Sets comment

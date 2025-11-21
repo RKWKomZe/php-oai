@@ -8,6 +8,7 @@ namespace RKW\OaiConnector\Security;
  */
 final class Headers
 {
+
     /**
      * Security headers for all requests.
      */
@@ -28,4 +29,5 @@ final class Headers
     {
         header('Cache-Control: public, max-age=300, stale-while-revalidate=60');
     }
+
 }

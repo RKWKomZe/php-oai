@@ -64,4 +64,5 @@ class FormatXml
         $fallback = "<!-- Pretty-print failed: {$msg} -->\n" . $xml;
         return htmlspecialchars($fallback, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
+    
 }
