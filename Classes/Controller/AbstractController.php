@@ -15,14 +15,16 @@ use RKW\OaiConnector\Utility\ConfigLoader;
 abstract class AbstractController
 {
     /**
-     * @var array|mixed[]
+     * @var array
      */
     protected array $settings = [];
+
 
     /**
      * @var PDO|null
      */
     private ?PDO $pdo = null;
+
 
     /**
      * constructor
@@ -31,6 +33,7 @@ abstract class AbstractController
     {
         $this->settings = ConfigLoader::load();
     }
+
 
     /**
      * Retrieves the PDO instance, creating it if it does not already exist.
@@ -85,4 +88,5 @@ abstract class AbstractController
         include_once $config['app']['basePath'] . '/Resources/Private/Layouts/DefaultLayout.php';
         renderLayout($templateFile, $data);
     }
+
 }

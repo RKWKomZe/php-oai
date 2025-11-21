@@ -19,13 +19,18 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class RepoController extends AbstractController
 {
+
     private ?OaiRepoRepository $oaiRepoRepository = null;
+
+
     private ?OaiRepoDescriptionRepository $oaiRepoDescriptionRepository = null;
+
 
     protected function getOaiRepoRepository(): OaiRepoRepository
     {
         return $this->oaiRepoRepository ??= new OaiRepoRepository();
     }
+
 
     protected function getOaiRepoDescriptionRepository(): OaiRepoDescriptionRepository
     {
@@ -49,13 +54,14 @@ class RepoController extends AbstractController
      */
     public function list(): void
     {
-        $pagination = PaginationFactory::fromRequestValues();
 
+        $pagination = PaginationFactory::fromRequestValues();
         $repoList = $this->oaiRepoRepository->withPagination($pagination)->withModels()->findAll();
 
         $this->render('list', [
             'repoList' => $repoList,
         ]);
+
     }
 
 
@@ -126,6 +132,7 @@ class RepoController extends AbstractController
      */
     public function create(): void
     {
+
         $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
 
         $oaiRepoDescription = GenericModelMapper::map($_POST, OaiRepoDescription::class);
@@ -138,13 +145,16 @@ class RepoController extends AbstractController
 
         $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
 
-        if ($success) {
-            FlashMessage::add('Repository was successfully created. Next, an “OAI Meta” with linked schema prefix (e.g., “oai_dc”) should be created.',  FlashMessage::TYPE_SUCCESS);
-            Redirect::to('show', 'Repo', ['id'  => $oaiRepo->getId()]);
-        } else {
+        if (!$success) {
             FlashMessage::add('Repository could not be saved.',   FlashMessage::TYPE_DANGER);
             Redirect::to('new', 'Repo');
         }
+
+        FlashMessage::add('Repository was successfully created. Next, an “OAI Meta” with linked schema prefix (e.g., “oai_dc”) should be created.',  FlashMessage::TYPE_SUCCESS);
+        Redirect::to('show', 'Repo', [
+            'id'  => $oaiRepo->getId()
+        ]);
+
     }
 
 
@@ -163,8 +173,8 @@ class RepoController extends AbstractController
      */
     public function edit(): void
     {
-        $identifier = $_GET['id'] ?? null;
 
+        $identifier = $_GET['id'] ?? null;
         if (!$identifier) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Repo');
@@ -172,12 +182,15 @@ class RepoController extends AbstractController
 
         $oaiRepo = $this->oaiRepoRepository->withModels()->findById($identifier);
 
-        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
+        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy([
+            'repo' => $oaiRepo->getId()
+        ]);
 
         $this->render('edit', [
             'oaiRepo' => $oaiRepo,
             'oaiRepoDescription' => $oaiRepoDescription
         ]);
+
     }
 
 
@@ -191,6 +204,7 @@ class RepoController extends AbstractController
      */
     public function update(): void
     {
+
         $oaiRepo = GenericModelMapper::map($_POST, OaiRepo::class);
         $oaiRepoDescription = GenericModelMapper::map($_POST, OaiRepoDescription::class);
         $oaiRepoDescription->setRepo($oaiRepo->getId());
@@ -199,12 +213,11 @@ class RepoController extends AbstractController
         $oaiRepoDescription->setUpdated(date('Y-m-d H:i:s'));
 
         $this->oaiRepoRepository->update($oaiRepo);
-
         $this->oaiRepoDescriptionRepository->upsert($oaiRepoDescription);
 
         FlashMessage::add('Record successfully edited.', FlashMessage::TYPE_SUCCESS);
-
         Redirect::to('show', 'Repo', ['id' => $oaiRepo->getId()]);
+
     }
 
 
@@ -214,10 +227,13 @@ class RepoController extends AbstractController
      */
     public function delete(): void
     {
+
         $oaiRepo = GenericModelMapper::map($_GET, OaiRepo::class);
 
         // deleteDescription
-        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy(['repo' => $oaiRepo->getId()]);
+        $oaiRepoDescription = $this->oaiRepoDescriptionRepository->withModels()->findOneBy([
+            'repo' => $oaiRepo->getId()
+        ]);
         if ($oaiRepoDescription) {
             $this->oaiRepoDescriptionRepository->delete($oaiRepoDescription, ['repo']);
         }
@@ -225,26 +241,32 @@ class RepoController extends AbstractController
         $this->oaiRepoRepository->delete($oaiRepo);
 
         FlashMessage::add('Record deleted.', FlashMessage::TYPE_SUCCESS);
+        Redirect::to('list', 'Repo', [
+            'id' => $oaiRepo->getId()
+        ]);
 
-        Redirect::to('list', 'Repo', ['id' => $oaiRepo->getId()]);
     }
 
 
     /**
      * @return void
+     * @throws \JsonException
      */
     public function validateRepoId(): void
     {
+
         header('Content-Type: application/json');
 
         $repoId = trim($_GET['repoId'] ?? '');
         $exists = false;
 
         if ($repoId !== '') {
-            $exists = (bool) $this->oaiRepoRepository->findOneBy(['id' => $repoId]);
+            $exists = (bool) $this->oaiRepoRepository->findOneBy([
+                'id' => $repoId
+            ]);
         }
 
-        echo json_encode(['exists' => $exists]);
+        echo json_encode(['exists' => $exists], JSON_THROW_ON_ERROR);
         exit;
     }
 
