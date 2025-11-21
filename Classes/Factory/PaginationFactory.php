@@ -4,6 +4,7 @@ namespace RKW\OaiConnector\Factory;
 
 use RKW\OaiConnector\Utility\Pagination;
 
+
 /**
  * PaginationFactory
  *
@@ -11,6 +12,7 @@ use RKW\OaiConnector\Utility\Pagination;
  */
 class PaginationFactory
 {
+
     /**
      * Creates a Pagination object based on page and limit values.
      *
@@ -20,6 +22,7 @@ class PaginationFactory
      */
     public static function fromRequestValues(?int $page = null, ?int $limit = null): Pagination
     {
+
         // Use fallback from $_GET if values are not explicitly passed
         $resolvedPage = $page ?? (isset($_GET['page']) ? (int)$_GET['page'] : 1);
         $resolvedLimit = $limit ?? (isset($_GET['limit']) ? (int)$_GET['limit'] : Pagination::DEFAULT_LIMIT);
@@ -33,5 +36,7 @@ class PaginationFactory
         }
 
         return new Pagination($resolvedPage, $resolvedLimit);
+
     }
+
 }

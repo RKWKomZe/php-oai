@@ -11,6 +11,7 @@ use Monolog\Level;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
+
 /**
  * Central Monolog factory for the OAI application.
  * - Creates rotating app.log (all levels)
@@ -22,6 +23,7 @@ final class LoggerFactory
 
     private static ?LoggerInterface $instance = null;
 
+
     /**
      * Initialize the global logger instance.
      *
@@ -30,9 +32,13 @@ final class LoggerFactory
      */
     public static function init(string $logDir, string $channel = 'oai-app'): void
     {
+
         // Ensure directory exists
-        if (!is_dir($logDir)) {
-            mkdir($logDir, 0777, true);
+        if (!is_dir($logDir)
+            && !mkdir($logDir, 0777, true)
+            && !is_dir($logDir)
+        ) {
+            throw new \RuntimeException(sprintf('Directory "%s" was not created', $logDir));
         }
 
         // Create base logger
@@ -63,6 +69,7 @@ final class LoggerFactory
         $logger->pushHandler($errorHandler);
 
         self::$instance = $logger;
+
     }
 
 
@@ -72,9 +79,13 @@ final class LoggerFactory
      */
     public static function get(): LoggerInterface
     {
+
         if (!self::$instance) {
             return new NullLogger();
         }
+
         return self::$instance;
+
     }
+
 }

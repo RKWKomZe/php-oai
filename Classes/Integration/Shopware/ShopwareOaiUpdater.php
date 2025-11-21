@@ -15,27 +15,33 @@ use Symfony\Component\VarDumper\VarDumper;
 class ShopwareOaiUpdater extends \Oai_Updater
 {
 
+
     /**
      * @var string
      */
     protected string $repoId;
+
 
     /**
      * @var array
      */
     protected array $records = [];
 
+
     /**
      * @var int
      */
     protected int $cursor = 0;
 
+
     private ?OaiSetRepository $oaiSetRepository = null;
+
 
     protected function getOaiSetRepository(): OaiSetRepository
     {
         return $this->oaiSetRepository ??= new OaiSetRepository();
     }
+
 
     /**
      * Constructor to initialize a repository connection along with specific records to be managed.
@@ -62,10 +68,13 @@ class ShopwareOaiUpdater extends \Oai_Updater
         bool $save_history,
         array $records
     ) {
+
         parent::__construct($hostname, $username, $password, $database, $repo, $save_history);
+
         $this->repoId = $repo;
         $this->records = $records;
         $this->oaiSetRepository = $this->getOaiSetRepository();
+
     }
 
 
@@ -99,10 +108,13 @@ class ShopwareOaiUpdater extends \Oai_Updater
         $to = null,
         $noDeleted = false,
         $set = null
-    )
+    ): array
     {
+
         $this->cursor = 0;
+
         return $this->records;
+
     }
 
 
@@ -114,12 +126,14 @@ class ShopwareOaiUpdater extends \Oai_Updater
      */
     public function nextObject(& $r)
     {
+
         if ($this->cursor < count($this->records)) {
             $r = $this->records[$this->cursor++];
             return $r;
         }
 
         return false;
+
     }
 
 
@@ -132,7 +146,9 @@ class ShopwareOaiUpdater extends \Oai_Updater
      */
     public function identifier($id): string
     {
+
         return 'oai:' . $this->repoId . ':' . $id;
+
     }
 
 
@@ -146,9 +162,11 @@ class ShopwareOaiUpdater extends \Oai_Updater
      * @param string $identifier The original identifier, typically in the format "oai:{repoId}:{remainingIdentifier}".
      * @return string The identifier after removing the defined prefix.
      */
-    public function parseIdentifier($identifier): string
+    public function parseIdentifier(string $identifier): string
     {
+
         return preg_replace('/^oai:' . preg_quote($this->repoId, '/') . ':/', '', $identifier);
+
     }
 
 
@@ -199,7 +217,9 @@ class ShopwareOaiUpdater extends \Oai_Updater
      */
     public function deleted($f): int
     {
+
         return isset($f['deleted']) ? (int)$f['deleted'] : 0;
+
     }
 
 
@@ -241,13 +261,10 @@ XML;
         return $xml;
         */
 
-        switch (strtolower($metadataPrefix)) {
-            case 'oai_dc':
-                return $this->renderDublinCore($f);
-            case 'marcxml':
-            default:
-                return $this->renderMarcXml($f);
-        }
+        return match (strtolower($metadataPrefix)) {
+            'oai_dc' => $this->renderDublinCore($f),
+            default => $this->renderMarcXml($f),
+        };
 
     }
 
@@ -263,15 +280,17 @@ XML;
      */
     public function about($f, $metadataPrefix): array
     {
+
         $productName = htmlspecialchars($f['title'] ?? 'unbekannt');
 
         return [
             '<about>
-            <source>Shopware</source>
-            <product>' . $productName . '</product>
-            <imported>' . date('c') . '</imported>
-        </about>'
+                <source>Shopware</source>
+                <product>' . $productName . '</product>
+                <imported>' . date('c') . '</imported>
+            </about>'
         ];
+
     }
 
 
@@ -294,7 +313,7 @@ XML;
      *
      * @return string The XML-escaped string.
      */
-    private function xmlEscape($value): string
+    private function xmlEscape(string $value): string
     {
         return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
@@ -337,11 +356,9 @@ XML;
         // categories or somewhat else
         $oaiRepoSet = $this->oaiSetRepository
             ->withModels()
-            ->findOneBy(
-                [
-                    'repo' => $this->repoId
-                ]
-            );
+            ->findOneBy([
+                'repo' => $this->repoId
+            ]);
 
         return [$oaiRepoSet->getSetSpec()];
 
@@ -387,7 +404,7 @@ XML;
      *
      * @return array
      */
-    public function metadataPrefixArray()
+    public function metadataPrefixArray(): array
     {
         // Just a mindless default return. We can pass the value manually when calling ->run in ImportController.
         // for the "Deutsche Nationalbibliothek" we want to use marcxml
@@ -404,7 +421,7 @@ XML;
      *
      * @return array Returns an array containing structured metadata related to the specified entity or product.
      */
-    public function aboutMetadata($f): array
+    public function aboutMetadata(mixed $f): array
     {
         $id = $this->id($f);
         $product = $this->findProductById($id);
@@ -432,6 +449,7 @@ XML;
                 return $record;
             }
         }
+
         return null;
     }
 
