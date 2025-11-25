@@ -220,26 +220,7 @@ class ShopwareOaiUpdater extends \Oai_Updater
     public function metadata($f, $metadataPrefix): string
     {
 
-        // Hint: The $f product array is build in ShopwareOaiUpdater->transformProduct()
-
-        /*
-        var_dump($metadataPrefix); exit;
-
-        $xml = <<<XML
-<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/"
-           xmlns:dc="http://purl.org/dc/elements/1.1/"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/
-           http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
-    <dc:title>{$this->xmlEscape($f['title'])}</dc:title>
-    <dc:identifier>{$this->xmlEscape($f['url'])}</dc:identifier>
-    <dc:description>{$this->xmlEscape($f['description'])}</dc:description>
-</oai_dc:dc>
-XML;
-
-
-        return $xml;
-        */
+        // HINT: The $f product array is build in ShopwareOaiUpdater->transformProduct()
 
         switch (strtolower($metadataPrefix)) {
             case 'oai_dc':
@@ -509,9 +490,7 @@ XML;
      */
     private function renderMarcXml(array $f): string
     {
-        $builder = new MarcXmlBuilder([
-            'downloadBaseUrl' => $this->settings['downloadBaseUrl'] ?? '',
-        ]);
+        $builder = new MarcXmlBuilder();
 
         return $builder->renderRecord($f);
     }

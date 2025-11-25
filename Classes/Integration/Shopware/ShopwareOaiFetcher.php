@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Psr\Log\LoggerInterface;
 use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Utility\ConfigLoader;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Class ShopwareOaiFetcher
@@ -16,17 +17,17 @@ use RKW\OaiConnector\Utility\ConfigLoader;
 class ShopwareOaiFetcher
 {
     /**
-     * @var string|mixed
+     * @var string
      */
     private string $baseUrl;
 
     /**
-     * @var string|mixed
+     * @var string
      */
     private string $clientId;
 
     /**
-     * @var string|mixed
+     * @var string
      */
     private string $clientSecret;
 
@@ -83,54 +84,32 @@ class ShopwareOaiFetcher
      * SSL verification is disabled. In case no result is returned from the API, an exception is thrown.
      *
      * @param string $productId The unique identifier of the product to fetch.
-     * @return array An array containing the transformed product data.
+     * @return array|null An array containing the transformed product data.
      * @throws \RuntimeException|GuzzleException If the Shopware API returns an empty result for the provided product ID.
      */
-    public function fetchSingleById(string $productId): array
+    public function fetchSingleById(string $productId): ?array
     {
         $accessToken = $this->fetchAccessToken();
-        $url = $this->baseUrl . '/api/';
 
-        $client = new Client([
-            'base_uri' => $url,
-            'verify' => false, // deaktiviert SSL-Prüfung für lokale DDEV-Umgebung
-        ]);
+        $filterOptions = [
+            'type' => 'equals',
+            'field' => 'id',
+            'value' => $productId
+        ];
 
-        // IMPORTANT: For single product request the Shopware API-Integration needs ADMIN rights!
-        $response = $client->get('product/' . $productId, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Accept' => 'application/json',
-            ],
-            'query' => [
-                'associations[cover][associations][media]' => [],
-            ],
-        ]);
+        $productItem = $this->fetchProducts($accessToken, $filterOptions, 1, true);
 
-        // Alternative api query without api-ADMIN-access
-        /*
-        $response = $client->post('/api/search/product', [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $accessToken,
-                'Accept' => 'application/json',
-            ],
-            'query' => [
-                'associations[cover][associations][media]' => [],
-            ],
-            'json' => [
-                'limit' => 1,
-                'filter' => [['type' => 'equals', 'field' => 'id', 'value' => $productId]],
-            ]
-        ]);
-        */
+     //   VarDumper::dump($productItem);
 
-        $productList = json_decode($response->getBody()->getContents(), true);
-
-        if (empty($productList)) {
+        if (empty($productItem)) {
             throw new \RuntimeException("Shopware API returned empty result for product ID: {$productId}");
         }
 
-        return $this->transformProduct($productList['data']);
+        $product = $productItem['data'][0] ?? null;
+
+        return $product
+            ? $this->transformProduct($product)
+            : null;
     }
 
 
@@ -142,7 +121,6 @@ class ShopwareOaiFetcher
      */
     protected function transformProduct(array $product): array
     {
-
         $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
         $description = $product['translated']['description'] ?? '';
         $createdAt = $product['createdAt'] ?? date('Y-m-d');
@@ -150,7 +128,7 @@ class ShopwareOaiFetcher
         return [
             'identifier' => $product['id'],
             'datestamp' => $createdAt,
-            'title' => $title,
+            'title' => trim($title),
             'description' => $description,
             'url' => $this->baseUrl . "/detail/{$product['id']}",
 
@@ -158,9 +136,7 @@ class ShopwareOaiFetcher
             'releaseDate' => $product['releaseDate'] ?? '',
             'categoryIds' => $product['categoryIds'] ?? [],
             'customFields' => $product['customFields'] ?? [],
-
-            // auf basis von Steffens PDF
-            'digital_address' => '???',
+            'properties' => $product['properties'] ?? [],
 
         ];
     }
@@ -199,22 +175,43 @@ class ShopwareOaiFetcher
      *
      * @param string $accessToken The access token used for authentication with the API.
      * @param array $filterOptions An array of filter options for fetching products, such as date ranges.
+     * @param int|null $limit The limit
+     * @param bool $useFiltersAsProvided overrides other automatically set filter options
      *
      * @return array|null The decoded JSON response containing the list of products.
-     * @throws GuzzleException
      */
-    protected function fetchProducts(string $accessToken, array $filterOptions): ?array
+    protected function fetchProducts(string $accessToken, array $filterOptions, ?int $limit = null, bool $useFiltersAsProvided = false): ?array
     {
 
-        #$url = $this->baseUrl . '/api/product';
-        $url = $this->baseUrl . '/api/search/product';
+        $queryPath = '/api/search/product';
+        $url = $this->baseUrl . $queryPath;
 
         $client = new Client([
             'base_uri' => $url,
-            'verify' => false, // lokal ggf. nötig bei self-signed SSL
+            'verify' => false, //  Local may be necessary for self-signed SSL
         ]);
 
         $filters = [];
+
+        // @toDo: Maybe change to array $filterOptions
+        $page = isset($_GET['page']) && is_numeric($_GET['page']) && $_GET['page'] > 0 ? (int)$_GET['page'] : 1;
+
+        // LIMIT (can use GET arguments from list pagination)
+        if ($limit === null) {
+            $limit = (
+                isset($_GET['limit']) &&
+                is_numeric($_GET['limit']) &&
+                $_GET['limit'] > 0 &&
+                $_GET['limit'] <= 500
+            )
+                ? (int) $_GET['limit']
+                : 25;
+        }
+        // Validate explicit limit too
+        if ($limit < 1 || $limit > 500) {
+            $limit = 25;
+        }
+
 
         if (
             isset($filterOptions['fromDate'])
@@ -239,26 +236,34 @@ class ShopwareOaiFetcher
             ];
         }
 
-        // @toDo: Maybe change to array $filterOptions
-        $page = isset($_GET['page']) && is_numeric($_GET['page']) && $_GET['page'] > 0 ? (int)$_GET['page'] : 1;
-        $limit = isset($_GET['limit']) && is_numeric($_GET['limit']) && $_GET['limit'] > 0 && $_GET['limit'] <= 500
-            ? (int) $_GET['limit']
-            : 25;
-
+        // Use the filter options as they are passed on.
+        if ($useFiltersAsProvided) {
+            $filters = [$filterOptions];
+        }
 
         $this->logger->info('Start Shopware fetch', ['endpoint' => $url]);
 
         $response = null;
 
         try {
-            $response = $client->post('/api/search/product', [
+            $response = $client->post($queryPath, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
                     'Accept' => 'application/json',
                 ],
                 'json' => [
                     'associations' => [
-                        'cover' => ['associations' => ['media' => []]],
+                        'cover' => [
+                            'associations' => [
+                                'media' => []
+                            ]
+                        ],
+                        'properties' => [
+                            'associations' => [
+                                'group' => []
+                            ]
+                        ],
+                        'manufacturer' => [],
                     ],
                     'filter' => $filters,
                     'limit' => $limit,
@@ -278,7 +283,6 @@ class ShopwareOaiFetcher
                 'error' => $e->getMessage(),
             ]);
         }
-
 
         // if we got here, $response is guaranteed to be set
         try {

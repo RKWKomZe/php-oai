@@ -4,15 +4,43 @@ declare(strict_types=1);
 
 namespace RKW\OaiConnector\Utility;
 
+use Symfony\Component\VarDumper\VarDumper;
+
 class MarcXmlBuilder
 {
+
+    /**
+     * @var \DOMDocument
+     */
     private \DOMDocument $doc;
+
+
+    /**
+     * @var \DOMElement
+     */
     private \DOMElement $record;
 
-    public function __construct(
-        private readonly array $config = []
-    ) {
 
+    /**
+     * @var string
+     */
+    private string $downloadBaseUrl;
+
+    /**
+     * the shopware property ID which identifies the authors storage
+     */
+    private const SHOPWARE_AUTHOR_GROUP_ID = '0198a8a44b63714f8d1bacedca03392b';
+
+
+    /**
+     * constructor
+     */
+    public function __construct()
+    {
+
+        $config = ConfigLoader::load();
+
+        $this->downloadBaseUrl = $config['typo3']['downloadBaseUrl'];
     }
 
 
@@ -21,6 +49,7 @@ class MarcXmlBuilder
      *
      * @param array $f
      * @return string
+     * @throws \DOMException
      */
     public function renderRecord(array $f): string
     {
@@ -31,9 +60,9 @@ class MarcXmlBuilder
         $this->addControl001($f);
 
         // Descriptive fields
-        $this->add245Title($f);
-        $this->add264Year($f);
-        $this->addPublisherAndPlace264($f);
+        $this->addCreatorsFromProperties($f);
+        $this->addTitle245($f);
+        $this->addPublisherAndPlaceAndYear264($f);
         $this->addIsbnIssnAndProductNumber($f);
         $this->addAccess506($f);
         $this->addAbstract520($f);
@@ -46,20 +75,16 @@ class MarcXmlBuilder
         $this->addBundleRelations($f);
         $this->addCategories690($f);
 
-        // TODO: add creators 100/700, subjects 650, etc. when needed
-
         return $this->doc->saveXML($this->record);
     }
 
-    // ---------------------------------------------------------------------
-    // Initialization
-    // ---------------------------------------------------------------------
+
 
     /**
      * @return void
      * @throws \DOMException
      */
-    private function initDocument(): void
+    protected function initDocument(): void
     {
         $this->doc = new \DOMDocument('1.0', 'UTF-8');
         $this->doc->formatOutput = false;
@@ -76,7 +101,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addLeader(): void
+    protected function addLeader(): void
     {
         $leader = $this->doc->createElement('leader', '00000nam a2200000 a 4500');
         $this->record->appendChild($leader);
@@ -88,7 +113,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addControl001(array $f): void
+    protected function addControl001(array $f): void
     {
         $id = ($f['identifier'] ?? '') ?: ($f['url'] ?? '');
         if ($id === '') {
@@ -110,10 +135,10 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function add245Title(array $f): void
+    protected function addTitle245(array $f): void
     {
-        $title    = trim($f['name'] ?? '');
-        $subtitle = trim($f['translated']['customFields']['custom_meta_subheader'] ?? '');
+        $title    = trim($f['title'] ?? '');
+        $subtitle = trim($f['customFields']['custom_meta_subheader'] ?? '');
 
         if ($title === '') {
             return;
@@ -174,35 +199,83 @@ class MarcXmlBuilder
 
 
     // ---------------------------------------------------------------------
-    // 264: year
+    // 100/700: Creators (authors) from Shopware properties
     // ---------------------------------------------------------------------
 
     /**
+     * Add 100/700 fields based on Shopware property group "Autorenschaft".
+     *
      * @param array $f
      * @return void
      * @throws \DOMException
      */
-    private function add264Year(array $f): void
+    protected function addCreatorsFromProperties(array $f): void
     {
-        if (empty($f['releaseDate'])) {
+        $properties = $f['properties'] ?? null;
+
+        if (!is_array($properties) || $properties === []) {
             return;
         }
 
-        $year = substr((string)$f['releaseDate'], 0, 4);
-        if (!ctype_digit($year)) {
+        $authors = [];
+
+        foreach ($properties as $property) {
+            if (!is_array($property)) {
+                continue;
+            }
+
+            // Determine group id either from "groupId" or nested "group.id"
+            $groupId = $property['groupId'] ?? ($property['group']['id'] ?? null);
+            if ($groupId !== self::SHOPWARE_AUTHOR_GROUP_ID) {
+                continue;
+            }
+
+            // Prefer translated name, fallback to raw name
+            $name = $property['translated']['name'] ?? $property['name'] ?? '';
+            $name = trim((string)$name);
+
+            if ($name !== '' && !in_array($name, $authors, true)) {
+                $authors[] = $name;
+            }
+        }
+
+        if ($authors === []) {
             return;
         }
 
-        $df264 = $this->doc->createElement('datafield');
-        $df264->setAttribute('tag', '264');
-        $df264->setAttribute('ind1', ' ');
-        $df264->setAttribute('ind2', '1');
+        // First author goes into 100 (Main Entry - Personal Name)
+        $df100 = $this->doc->createElement('datafield');
+        $df100->setAttribute('tag', '100');
+        // Indicator 1 = 1: surname entry, matches "Heitzer-Priem, Ulrike"
+        $df100->setAttribute('ind1', '1');
+        $df100->setAttribute('ind2', ' ');
 
-        $sfC = $this->doc->createElement('subfield', $year);
-        $sfC->setAttribute('code', 'c');
-        $df264->appendChild($sfC);
+        $sfA = $this->doc->createElement('subfield', $authors[0]);
+        $sfA->setAttribute('code', 'a');
+        $df100->appendChild($sfA);
 
-        $this->record->appendChild($df264);
+        $this->record->appendChild($df100);
+
+        // Additional authors (if any) as 700 fields
+        if (count($authors) > 1) {
+            foreach (array_slice($authors, 1) as $authorName) {
+                $authorName = trim((string)$authorName);
+                if ($authorName === '') {
+                    continue;
+                }
+
+                $df700 = $this->doc->createElement('datafield');
+                $df700->setAttribute('tag', '700');
+                $df700->setAttribute('ind1', '1');
+                $df700->setAttribute('ind2', ' ');
+
+                $sfA = $this->doc->createElement('subfield', $authorName);
+                $sfA->setAttribute('code', 'a');
+                $df700->appendChild($sfA);
+
+                $this->record->appendChild($df700);
+            }
+        }
     }
 
 
@@ -216,7 +289,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addIsbnIssnAndProductNumber(array $f): void
+    protected function addIsbnIssnAndProductNumber(array $f): void
     {
         $customFields  = $f['customFields'] ?? [];
         $value         = $customFields['custom_product_oai_issn_isbn'] ?? '';
@@ -262,7 +335,8 @@ class MarcXmlBuilder
 
 
     // ---------------------------------------------------------------------
-    // 264: place + publisher
+    // Historical publication identifier combination
+    // 264: place + publisher + year
     // ---------------------------------------------------------------------
 
     /**
@@ -270,10 +344,12 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addPublisherAndPlace264(array $f): void
+    protected function addPublisherAndPlaceAndYear264(array $f): void
     {
         $publisher = trim($f['manufacturer']['translated']['name'] ?? '');
         $place     = trim($f['manufacturer']['translated']['customFields']['custom_manufacturer_oai_place'] ?? '');
+        $yearRaw   = trim($f['releaseDate'] ?? '');
+        $year      = substr($yearRaw, 0, 4);
 
         if ($publisher === '') {
             $publisher = 'RKW Kompetenzzentrum';
@@ -282,14 +358,15 @@ class MarcXmlBuilder
             $place = 'Eschborn';
         }
 
-        if ($publisher === '' && $place === '') {
+        // If all empty → no field
+        if ($publisher === '' && $place === '' && !ctype_digit($year)) {
             return;
         }
 
         $df264 = $this->doc->createElement('datafield');
         $df264->setAttribute('tag', '264');
         $df264->setAttribute('ind1', ' ');
-        $df264->setAttribute('ind2', '1');
+        $df264->setAttribute('ind2', '1'); // publication
 
         if ($place !== '') {
             $sfA = $this->doc->createElement('subfield', $place);
@@ -300,6 +377,11 @@ class MarcXmlBuilder
             $sfB = $this->doc->createElement('subfield', $publisher);
             $sfB->setAttribute('code', 'b');
             $df264->appendChild($sfB);
+        }
+        if (ctype_digit($year)) {
+            $sfC = $this->doc->createElement('subfield', $year);
+            $sfC->setAttribute('code', 'c');
+            $df264->appendChild($sfC);
         }
 
         $this->record->appendChild($df264);
@@ -315,7 +397,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addAccess506(array $f): void
+    protected function addAccess506(array $f): void
     {
         $access = trim($f['customFields']['custom_product_oai_access'] ?? '');
         if ($access === '') {
@@ -348,7 +430,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addAbstract520(array $f): void
+    protected function addAbstract520(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
         $description  = ($customFields['custom_meta_covertext'] ?? '') ?: ($f['description'] ?? '');
@@ -379,9 +461,10 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addElectronicLocation856(array $f): void
+    protected function addElectronicLocation856(array $f): void
     {
         $url = $this->buildElectronicLocationUrl($f);
+
         if ($url === '') {
             return;
         }
@@ -409,14 +492,15 @@ class MarcXmlBuilder
      */
     private function buildElectronicLocationUrl(array $f): string
     {
-        $base = $this->config['downloadBaseUrl'] ?? '';
+
+        $base = $this->downloadBaseUrl ?? '';
         $base = rtrim((string)$base, '/');
 
         if ($base === '') {
             return '';
         }
 
-        $name          = trim($f['name'] ?? '');
+        $name          = trim($f['title'] ?? '');
         $productNumber = trim($f['productNumber'] ?? '');
         $customFields  = $f['customFields'] ?? [];
         $resourceType  = trim($customFields['custom_product_oai_resource_type'] ?? '');
@@ -470,7 +554,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addJournal773(array $f): void
+    protected function addJournal773(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
         $resourceType = trim($customFields['custom_product_oai_resource_type'] ?? '');
@@ -502,7 +586,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addIssue362(array $f): void
+    protected function addIssue362(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
         $resourceType = trim($customFields['custom_product_oai_resource_type'] ?? '');
@@ -534,7 +618,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addBundleRelations(array $f): void
+    protected function addBundleRelations(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
 
@@ -606,7 +690,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addCategories690(array $f): void
+    protected function addCategories690(array $f): void
     {
         $categoryIds = array_values(
             array_filter(
@@ -637,7 +721,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    private function addLanguage041(array $f): void
+    protected function addLanguage041(array $f): void
     {
         $langRaw = $f['customFields']['custom_product_oai_language'] ?? '';
 
