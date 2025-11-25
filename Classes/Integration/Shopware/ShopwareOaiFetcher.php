@@ -46,7 +46,6 @@ class ShopwareOaiFetcher
      */
     public function __construct()
     {
-
         $config = ConfigLoader::load();
 
         $this->baseUrl = $config['api']['shopware']['baseUrl'];
@@ -54,7 +53,6 @@ class ShopwareOaiFetcher
         $this->clientSecret = $config['api']['shopware']['clientSecret'];
 
         $this->logger = LoggerFactory::get();
-
     }
 
 
@@ -65,6 +63,7 @@ class ShopwareOaiFetcher
      * @param bool $returnRawDataArray Determines whether to return the raw product data array or transformed records.
      * @return array The processed list of products, either raw or transformed.
      * @throws GuzzleException
+     * @throws \JsonException
      */
     public function fetchAndTransform(
         array $filterOptions = [],
@@ -100,7 +99,6 @@ class ShopwareOaiFetcher
      */
     public function fetchSingleById(string $productId): ?array
     {
-
         $accessToken = $this->fetchAccessToken();
 
         $filterOptions = [
@@ -110,8 +108,6 @@ class ShopwareOaiFetcher
         ];
 
         $productItem = $this->fetchProducts($accessToken, $filterOptions, 1, true);
-
-     //   VarDumper::dump($productItem);
 
         if (empty($productItem)) {
             throw new \RuntimeException("Shopware API returned empty result for product ID: {$productId}");
@@ -133,6 +129,7 @@ class ShopwareOaiFetcher
      */
     protected function transformProduct(array $product): array
     {
+
         $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
         $description = $product['translated']['description'] ?? '';
         $createdAt = $product['createdAt'] ?? date('Y-m-d');

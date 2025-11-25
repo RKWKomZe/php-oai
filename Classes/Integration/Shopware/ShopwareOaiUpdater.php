@@ -14,8 +14,6 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class ShopwareOaiUpdater extends \Oai_Updater
 {
-
-
     /**
      * @var string
      */
@@ -110,11 +108,9 @@ class ShopwareOaiUpdater extends \Oai_Updater
         $set = null
     ): array
     {
-
         $this->cursor = 0;
 
         return $this->records;
-
     }
 
 
@@ -502,9 +498,9 @@ class ShopwareOaiUpdater extends \Oai_Updater
     }
 
 
-
     /**
      * Render MARCXML
+     * @throws \DOMException
      */
     private function renderMarcXml(array $f): string
     {
