@@ -23,6 +23,9 @@ return [
             'clientSecret' => $_ENV['SHOPWARE_CLIENT_SECRET'],
         ]
     ],
+    'typo3' => [
+        'downloadBaseUrl' => 'https://www.rkw-kompetenzzentrum.de',
+    ],
     'database' => [
         'host' => $_ENV['DB_HOST'],
         'name' => $_ENV['DB_NAME'],
