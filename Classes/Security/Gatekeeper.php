@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace RKW\OaiConnector\Security;
 
-use RKW\OaiConnector\Security\AuthService;
 use RKW\OaiConnector\Utility\ConfigLoader;
 
 /**
@@ -19,9 +18,15 @@ use RKW\OaiConnector\Utility\ConfigLoader;
  */
 final class Gatekeeper
 {
+
     private OaiRequestMatcher $matcher;
+
+
     private Headers $headers;
+
+
     private AuthService $auth;
+
 
     /**
      *  constructor
@@ -113,4 +118,5 @@ final class Gatekeeper
         // Otherwise show minimal login form
         $this->auth->renderLogin();
     }
+
 }

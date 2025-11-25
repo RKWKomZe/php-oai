@@ -8,15 +8,18 @@ namespace RKW\OaiConnector\Security;
  */
 final class OaiRequestMatcher
 {
+
     /**
      * @var string[]
      */
     private array $verbs;
 
+
     /**
      * @var string[]
      */
     private array $allowedRepos;
+
 
     /**
      * @param string[] $verbs
@@ -63,4 +66,5 @@ final class OaiRequestMatcher
 
         return true;
     }
+
 }

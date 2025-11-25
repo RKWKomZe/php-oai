@@ -11,6 +11,7 @@ use RKW\OaiConnector\Service\OaiService;
  */
 class EndpointController extends AbstractController
 {
+
     /**
      * handle
      *
@@ -18,9 +19,9 @@ class EndpointController extends AbstractController
      */
     public function handle(): void
     {
-
         $oaiService = new OaiService();
         $oaiService->handleRequest();
 
     }
+
 }

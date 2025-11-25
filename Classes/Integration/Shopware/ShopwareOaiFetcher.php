@@ -16,25 +16,30 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 class ShopwareOaiFetcher
 {
+
     /**
      * @var string
      */
     private string $baseUrl;
+
 
     /**
      * @var string
      */
     private string $clientId;
 
+
     /**
      * @var string
      */
     private string $clientSecret;
 
+
     /**
      * @var ?LoggerInterface|LoggerFactory|null
      */
     private LoggerInterface|null|LoggerFactory $logger = null;
+
 
     /**
      * constructor
@@ -58,8 +63,12 @@ class ShopwareOaiFetcher
      * @param bool $returnRawDataArray Determines whether to return the raw product data array or transformed records.
      * @return array The processed list of products, either raw or transformed.
      * @throws GuzzleException
+     * @throws \JsonException
      */
-    public function fetchAndTransform(array $filterOptions = [], bool $returnRawDataArray = false): array
+    public function fetchAndTransform(
+        array $filterOptions = [],
+        bool $returnRawDataArray = false
+    ): array
     {
         $accessToken = $this->fetchAccessToken();
         $productList = $this->fetchProducts($accessToken, $filterOptions);
@@ -86,6 +95,7 @@ class ShopwareOaiFetcher
      * @param string $productId The unique identifier of the product to fetch.
      * @return array|null An array containing the transformed product data.
      * @throws \RuntimeException|GuzzleException If the Shopware API returns an empty result for the provided product ID.
+     * @throws \JsonException
      */
     public function fetchSingleById(string $productId): ?array
     {
@@ -98,8 +108,6 @@ class ShopwareOaiFetcher
         ];
 
         $productItem = $this->fetchProducts($accessToken, $filterOptions, 1, true);
-
-     //   VarDumper::dump($productItem);
 
         if (empty($productItem)) {
             throw new \RuntimeException("Shopware API returned empty result for product ID: {$productId}");
@@ -121,6 +129,7 @@ class ShopwareOaiFetcher
      */
     protected function transformProduct(array $product): array
     {
+
         $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
         $description = $product['translated']['description'] ?? '';
         $createdAt = $product['createdAt'] ?? date('Y-m-d');
@@ -139,6 +148,7 @@ class ShopwareOaiFetcher
             'properties' => $product['properties'] ?? [],
 
         ];
+
     }
 
 
@@ -146,18 +156,20 @@ class ShopwareOaiFetcher
      * Fetches an access token from the API using client credentials.
      *
      * @return string The access token or an empty string if retrieval fails.
+     * @throws \JsonException
      */
     private function fetchAccessToken(): string
     {
+
         $response = file_get_contents("{$this->baseUrl}/api/oauth/token", false, stream_context_create([
             'http' => [
                 'method' => 'POST',
                 'header' => "Content-Type: application/json\r\n",
                 'content' => json_encode([
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $this->clientId,
+                    'grant_type'    => 'client_credentials',
+                    'client_id'     => $this->clientId,
                     'client_secret' => $this->clientSecret
-                ])
+                ], JSON_THROW_ON_ERROR)
             ],
             'ssl' => [
                 'verify_peer' => false,
@@ -165,8 +177,10 @@ class ShopwareOaiFetcher
             ]
         ]));
 
-        $data = json_decode($response, true);
+        $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+
         return $data['access_token'] ?? '';
+
     }
 
 
@@ -245,6 +259,8 @@ class ShopwareOaiFetcher
 
         $response = null;
 
+
+        /* @todo: Maybe extract theo following try/catch blocks to make the method more readable. */
         try {
             $response = $client->post($queryPath, [
                 'headers' => [
@@ -286,6 +302,7 @@ class ShopwareOaiFetcher
 
         // if we got here, $response is guaranteed to be set
         try {
+
             $body = (string)$response->getBody();
             if ($body === '') {
                 $this->logger->warning('Shopware API returned empty body');
@@ -295,10 +312,51 @@ class ShopwareOaiFetcher
             return json_decode($body, true, 512, JSON_THROW_ON_ERROR);
 
         } catch (\JsonException $e) {
+
             $this->logger->error('Shopware API returned invalid JSON', [
                 'error' => $e->getMessage(),
             ]);
+
             return null;
+
         }
+
     }
+
+
+    /**
+     * @param array $filterOptions
+     * @return array|array[]
+     */
+    protected function setFilters(array $filterOptions): array
+    {
+
+        $filters = [];
+
+        if (
+            isset($filterOptions['fromDate'], $filterOptions['untilDate'])
+        ) {
+            $filters = [
+                // show only main products (show no product variations without name etc)
+                [
+                    'type'  => 'equals',
+                    'field' => 'parentId',
+                    'value' => null
+                ],
+                // Filter: order by creation date
+                [
+                    'type'       => 'range',
+                    'field'      => 'createdAt',
+                    'parameters' => [
+                        'gte' => $filterOptions['fromDate']->format('Y-m-d\TH:i:s.000\Z'),
+                        'lte' => $filterOptions['untilDate']->format('Y-m-d\TH:i:s.999\Z'),
+                    ],
+                ]
+            ];
+        }
+
+        return $filters;
+
+    }
+
 }

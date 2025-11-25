@@ -61,4 +61,5 @@ class DbConnection
             throw new \RuntimeException('Failed to connect to database: ' . $e->getMessage(), 0, $e);
         }
     }
+
 }

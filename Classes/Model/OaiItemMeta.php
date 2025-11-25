@@ -11,12 +11,14 @@ namespace RKW\OaiConnector\Model;
 class OaiItemMeta
 {
 
+
     /**
      * repo
      *
      * @var string
      */
     protected string $repo = '1';
+
 
     /**
      * history
@@ -25,12 +27,14 @@ class OaiItemMeta
      */
     protected int $history = 0;
 
+
     /**
      * serial
      *
      * @var int
      */
     protected int $serial = 0;
+
 
     /**
      * identifier
@@ -39,12 +43,14 @@ class OaiItemMeta
      */
     protected string $identifier = '';
 
+
     /**
      * metadataPrefix
      *
      * @var string
      */
     protected string $metadataPrefix = '';
+
 
     /**
      * datestamp
@@ -53,12 +59,14 @@ class OaiItemMeta
      */
     protected string $datestamp = '';
 
+
     /**
      * deleted
      *
      * @var int
      */
     protected int $deleted = 0;
+
 
     /**
      * published
@@ -67,12 +75,14 @@ class OaiItemMeta
      */
     protected ?string $published = null;
 
+
     /**
      * metadata
      *
      * @var string
      */
     protected string $metadata = '';
+
 
     /**
      * created
@@ -81,6 +91,7 @@ class OaiItemMeta
      */
     protected string $created = '';
 
+
     /**
      * updated
      *
@@ -88,11 +99,13 @@ class OaiItemMeta
      */
     protected string $updated = '';
 
+
     /**
      * constructor
      */
     public function __construct(array $data = [])
     {
+
         $this->repo = $data['repo'] ?? '1';
         $this->history = (int)($data['history'] ?? 0);
         $this->serial = (int)($data['serial'] ?? 0);
@@ -104,7 +117,9 @@ class OaiItemMeta
         $this->metadata = $data['metadata'] ?? '';
         $this->created = $data['created'] ?? '';
         $this->updated = $data['updated'] ?? '';
+
     }
+
 
     /**
      * Gets repo
@@ -160,6 +175,7 @@ class OaiItemMeta
         return $this->serial;
     }
 
+
     /**
      * Sets serial
      *
@@ -181,6 +197,7 @@ class OaiItemMeta
     {
         return $this->identifier;
     }
+
 
     /**
      * Sets identifier
@@ -204,6 +221,7 @@ class OaiItemMeta
         return $this->metadataPrefix;
     }
 
+
     /**
      * Sets metadata prefix
      *
@@ -225,6 +243,7 @@ class OaiItemMeta
     {
         return $this->datestamp;
     }
+
 
     /**
      * Sets datestamp
@@ -248,6 +267,7 @@ class OaiItemMeta
         return $this->deleted === 1;
     }
 
+
     /**
      * Sets deleted
      *
@@ -269,6 +289,7 @@ class OaiItemMeta
     {
         return $this->published;
     }
+
 
     /**
      * Sets published
@@ -292,6 +313,7 @@ class OaiItemMeta
         return $this->metadata;
     }
 
+
     /**
      * Sets metadata
      *
@@ -314,6 +336,7 @@ class OaiItemMeta
         return $this->created;
     }
 
+
     /**
      * Sets created
      *
@@ -335,6 +358,7 @@ class OaiItemMeta
     {
         return $this->updated;
     }
+
 
     /**
      * Sets updated

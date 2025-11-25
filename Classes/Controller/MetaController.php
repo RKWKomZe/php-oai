@@ -2,10 +2,8 @@
 
 namespace RKW\OaiConnector\Controller;
 
-use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Mapper\GenericModelMapper;
 use RKW\OaiConnector\Model\OaiMeta;
-use RKW\OaiConnector\Repository\OaiRepoDescriptionRepository;
 use RKW\OaiConnector\Repository\OaiMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\FlashMessage;
@@ -21,19 +19,24 @@ use RKW\OaiConnector\Utility\Redirect;
  */
 class MetaController extends AbstractController
 {
+
     private ?OaiMetaRepository $oaiMetaRepository = null;
 
+
     private ?OaiRepoRepository $oaiRepoRepository = null;
+
 
     protected function getOaiMetaRepository(): OaiMetaRepository
     {
         return $this->oaiMetaRepository ??= new OaiMetaRepository();
     }
 
+
     protected function getOaiRepoRepository(): OaiRepoRepository
     {
         return $this->oaiRepoRepository ??= new OaiRepoRepository();
     }
+
 
     /**
      * constructor
@@ -79,7 +82,6 @@ class MetaController extends AbstractController
         if (!$metaPrefix || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Meta');
-            return;
         }
 
         $oaiMeta = $this->oaiMetaRepository
@@ -93,7 +95,6 @@ class MetaController extends AbstractController
         if (!$oaiMeta) {
             FlashMessage::add('Record not found.', FlashMessage::TYPE_WARNING);
             Redirect::to('list', 'Meta');
-            return;
         }
 
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
@@ -104,6 +105,7 @@ class MetaController extends AbstractController
             'metadataPrefix' => $metaPrefix,
             'repoList' => $repoList
         ]);
+
     }
 
 
@@ -112,11 +114,13 @@ class MetaController extends AbstractController
      */
     public function new(): void
     {
+
         $repoList = $this->oaiRepoRepository->withModels()->findAll();
         $this->render('new', [
             'repoList' => $repoList,
             'oaiMeta' => new OaiMeta(),
         ]);
+
     }
 
 
@@ -127,19 +131,24 @@ class MetaController extends AbstractController
      */
     public function create(): void
     {
+
         $oaiMeta = GenericModelMapper::map($_POST, OaiMeta::class);
 
         $oaiMeta->setUpdated(date('Y-m-d H:i:s'));
 
         $success = $this->oaiMetaRepository->insert($oaiMeta);
 
-        if ($success) {
-            FlashMessage::add('Meta created successfully.',  FlashMessage::TYPE_SUCCESS);
-            Redirect::to('show', 'Meta', ['prefix'  => $oaiMeta->getMetadataPrefix(), 'repo' => $oaiMeta->getRepo()]);
-        } else {
+        if (!$success) {
             FlashMessage::add('Meta could not be saved.',   FlashMessage::TYPE_DANGER);
             Redirect::to('new', 'Meta');
         }
+
+        FlashMessage::add('Meta created successfully.',  FlashMessage::TYPE_SUCCESS);
+        Redirect::to('show', 'Meta', [
+            'prefix'  => $oaiMeta->getMetadataPrefix(),
+            'repo' => $oaiMeta->getRepo()
+        ]);
+
     }
 
 
@@ -161,7 +170,6 @@ class MetaController extends AbstractController
         if (!$metaPrefix || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Meta');
-            return;
         }
 
         $oaiMeta = $this->oaiMetaRepository->withModels()->findOneBy([
@@ -199,8 +207,11 @@ class MetaController extends AbstractController
         $this->oaiMetaRepository->update($oaiMeta, ['metadataPrefix', 'repo']);
 
         FlashMessage::add('Datensatz erfolgreich bearbeitet.', FlashMessage::TYPE_SUCCESS);
+        Redirect::to('show', 'Meta', [
+            'prefix' => $oaiMeta->getMetadataPrefix(),
+            'repo' => $oaiMeta->getRepo()
+        ]);
 
-        Redirect::to('show', 'Meta', ['prefix' => $oaiMeta->getMetadataPrefix(), 'repo' => $oaiMeta->getRepo()]);
     }
 
 
@@ -221,7 +232,6 @@ class MetaController extends AbstractController
         if (!$metaPrefix || !$repoName) {
             FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
             Redirect::to('list', 'Meta');
-            return;
         }
 
         $oaiMeta = $this->oaiMetaRepository->withModels()->findOneBy([
@@ -232,9 +242,8 @@ class MetaController extends AbstractController
         $this->oaiMetaRepository->delete($oaiMeta, ['metadataPrefix', 'repo']);
 
         FlashMessage::add('Datensatz gelöscht.', FlashMessage::TYPE_SUCCESS);
-
         Redirect::to('list', 'Meta');
-    }
 
+    }
 
 }
