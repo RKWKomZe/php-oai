@@ -4,7 +4,6 @@ namespace RKW\OaiConnector\Repository;
 
 use PDO;
 use PDOException;
-use RKW\OaiConnector\Mapper\GenericModelMapper;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\Pagination;
 use Symfony\Component\VarDumper\VarDumper;
@@ -16,12 +15,14 @@ use Symfony\Component\VarDumper\VarDumper;
  */
 abstract class AbstractRepository implements RepoContextAwareInterface
 {
+
     /**
      * settings
      *
      * @var array
      */
     protected array $settings = [];
+
 
     /**
      * pdo
@@ -30,12 +31,14 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      */
     protected PDO $pdo;
 
+
     /**
      * contextRepoId
      *
      * @var string|null
      */
     protected ?string $contextRepoId = '';
+
 
     /**
      * tempPagination
@@ -44,10 +47,12 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      */
     protected ?\RKW\OaiConnector\Utility\Pagination $tempPagination = null;
 
+
     /**
      * @var array|null
      */
     protected ?array $tempSorts = [];
+
 
     /**
      * modelClass
@@ -57,6 +62,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      */
     protected ?string $modelClass = null;
 
+
     /**
      * returnModels
      * Internal flag for model-return mode
@@ -64,6 +70,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      * @var bool
      */
     protected bool $returnModels = false;
+
 
     /**
      * constructor
@@ -127,6 +134,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         return $this->finalizeResult($rows);
+
     }
 
 
@@ -141,6 +149,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      * @return array|object|null Returns the record as an array or object if found, or null if no matching record exists.
      *
      * @throws \PDOException If there is an issue with query execution.
+     * @throws \ReflectionException
      */
     public function findById(string $id): array|object|null
     {
@@ -160,6 +169,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return $result ? $this->finalizeResult($result): null;
+
     }
 
 
@@ -210,8 +220,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         );
 
         try {
-            $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute($values);
+            return $this->pdo->prepare($sql)->execute($values);
         } catch (\PDOException $e) {
             // Duplicate primary key
             if ((int)$e->errorInfo[1] === 1062) {
@@ -352,8 +361,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             implode(' AND ', $whereClauses)
         );
 
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($values);
+        return $this->pdo->prepare($sql)->execute($values);
     }
 
 
@@ -400,8 +408,7 @@ abstract class AbstractRepository implements RepoContextAwareInterface
             implode(' AND ', $conditions)
         );
 
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute($parameters);
+        return $this->pdo->prepare($sql)->execute($parameters);
     }
 
 
@@ -410,11 +417,9 @@ abstract class AbstractRepository implements RepoContextAwareInterface
      *
      * @param array $criteria An associative array where the keys are column names
      *                        and the values are the corresponding conditions for filtering results.
-     * @param array $orderBy An associative array where the keys are column names and the values
-     *                        specify sorting directions ('ASC' or 'DESC').
      * @return array Returns an array of records matching the criteria.
      *
-     * @throws \PDOException If a database error occurs during query execution.
+     * @throws \ReflectionException
      */
     public function findBy(array $criteria = []): array {
 

@@ -13,6 +13,7 @@ use PDO;
  */
 class OaiItemMetaRepository extends AbstractRepository
 {
+
     /**
      * modelClass
      * Fully qualified model class name, defaults to OaiItemMeta::class
@@ -20,6 +21,7 @@ class OaiItemMetaRepository extends AbstractRepository
      * @var string|null
      */
     protected ?string $modelClass = OaiItemMeta::class;
+
 
     /**
      * tableName
@@ -91,5 +93,6 @@ class OaiItemMetaRepository extends AbstractRepository
         return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'identifier');
 
     }
+
 }
 

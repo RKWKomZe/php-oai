@@ -13,15 +13,18 @@ use RKW\OaiConnector\Utility\DbConnection;
  */
 class IndexController extends AbstractController
 {
+
     /**
      * @var OaiItemMetaRepository|null
      */
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
 
+
     /**
      * @var OaiRepoRepository|null
      */
     private ?OaiRepoRepository $repoRepository = null;
+
 
     /**
      * @return OaiItemMetaRepository
@@ -65,17 +68,18 @@ class IndexController extends AbstractController
         $pdo = DbConnection::get();
 
         $stmt = $pdo->query('
-        SELECT *
-        FROM oai_update_log
-        ORDER BY id DESC
-        LIMIT 30
-    ');
+            SELECT *
+            FROM oai_update_log
+            ORDER BY id DESC
+            LIMIT 30
+        ');
 
         $logs = $stmt->fetchAll();
 
         $this->render('index', [
             'logs' => $logs,
         ]);
+
     }
 
 }

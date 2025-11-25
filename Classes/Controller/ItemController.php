@@ -5,7 +5,6 @@ namespace RKW\OaiConnector\Controller;
 use RKW\OaiConnector\Factory\PaginationFactory;
 use RKW\OaiConnector\Repository\OaiItemMetaRepository;
 use RKW\OaiConnector\Repository\OaiRepoRepository;
-use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 
@@ -17,14 +16,18 @@ use RKW\OaiConnector\Utility\Redirect;
  */
 class ItemController extends AbstractController
 {
+
     private ?OaiItemMetaRepository $oaiItemMetaRepository = null;
 
+
     private ?OaiRepoRepository $repoRepository = null;
+
 
     protected function getOaiItemMetaRepository(): OaiItemMetaRepository
     {
         return $this->oaiItemMetaRepository ??= new OaiItemMetaRepository($this->settings['oai']['defaultRepoId']);
     }
+
 
     protected function getRepoRepository(): OaiRepoRepository
     {
@@ -54,6 +57,7 @@ class ItemController extends AbstractController
 
     /**
      * Retrieves and renders a list of repositories and their respective items with pagination.
+     *
      * @throws \ReflectionException
      */
     public function list(): void
@@ -95,6 +99,7 @@ class ItemController extends AbstractController
      */
     public function show(): void
     {
+
         $identifier = $_GET['id'] ?? null;
         $repoId = $_GET['repo'] ?? null;
 
@@ -122,8 +127,7 @@ class ItemController extends AbstractController
             'item' => $item,
             'repo' => $repoId,
         ]);
+
     }
-
-
 
 }
