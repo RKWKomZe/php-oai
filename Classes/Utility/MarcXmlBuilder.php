@@ -492,7 +492,6 @@ class MarcXmlBuilder
      */
     private function buildElectronicLocationUrl(array $f): string
     {
-
         $base = $this->downloadBaseUrl ?? '';
         $base = rtrim((string)$base, '/');
 
@@ -500,47 +499,26 @@ class MarcXmlBuilder
             return '';
         }
 
-        $name          = trim($f['title'] ?? '');
-        $productNumber = trim($f['productNumber'] ?? '');
+        $productIdShopware = trim($f['identifier'] ?? '');
         $customFields  = $f['customFields'] ?? [];
         $resourceType  = trim($customFields['custom_product_oai_resource_type'] ?? '');
 
-        if ($name === '' || $productNumber === '' || $resourceType === '') {
-            return '';
-        }
-
-        $slug = $this->slugify($name);
-        if ($slug === '') {
+        if ($productIdShopware === '' || $resourceType === '') {
             return '';
         }
 
         switch ($resourceType) {
             case 'am':
-                $path = '/shop/download/' . $slug . '/' . rawurlencode($productNumber);
+                $path = '/oai/shop/download/' . rawurlencode($productIdShopware);
                 break;
             case 'ab':
-                $path = '/shop/show/' . $slug . '/' . rawurlencode($productNumber);
+                $path = '/oai/shop/show/' . rawurlencode($productIdShopware);
                 break;
             default:
                 return '';
         }
 
         return $base . $path;
-    }
-
-
-    /**
-     * @param string $value
-     * @return string
-     */
-    private function slugify(string $value): string
-    {
-        $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
-        $value = preg_replace('/[^A-Za-z0-9]+/', '-', $value);
-        $value = trim((string)$value, '-');
-        $value = strtolower($value);
-
-        return $value;
     }
 
 

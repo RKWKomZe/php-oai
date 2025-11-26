@@ -24,7 +24,7 @@ return [
         ]
     ],
     'typo3' => [
-        'downloadBaseUrl' => 'https://www.rkw-kompetenzzentrum.de',
+        'downloadBaseUrl' => 'https://new.rkw-kompetenzzentrum.de',
     ],
     'database' => [
         'host' => $_ENV['DB_HOST'],
