@@ -14,7 +14,7 @@ use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
+use RKW\OaiConnector\Utility\ShopwareData;
 
 /**
  * ImportController
@@ -150,7 +150,7 @@ class ImportController extends AbstractController
         $shopwareIds = array_column($dataRequest['data'], 'id'); // z. B. ['abc123', 'def456', ...]
         $prefixedIds = array_map(fn($id) => "oai:$activeRepoId:" . $id, $shopwareIds);
 
-        $existingIdentifiers = $this->oaiItemMetaRepository->findByIdList($activeRepoId, $prefixedIds);
+
 
         // filter
         /* @todo: Is this filter necessary? Or can it be removed? *&
@@ -160,10 +160,17 @@ class ImportController extends AbstractController
         });
         */
 
+        // for usability: Compare selected Shopware records with already imported database items
+        //    $existingIdentifiers = $this->oaiItemMetaRepository->findByIdList($activeRepoId, $prefixedIds);
+        $identifierList = ShopwareData::buildOaiIdentifiersFromItems($dataRequest['data'], $activeRepoId);
+        $metaRows = $this->oaiItemMetaRepository->findBy([$identifierList]);
+        $existingIdentifierPool = ShopwareData::buildSourceIdPoolFromMetaRows($metaRows);
+
         $this->render('list', [
             //'unimportedProducts' => $unimportedProducts,
             'productList' => $dataRequest['data'],
-            'existingIdentifiers' => $existingIdentifiers,
+        //    'existingIdentifiers' => $existingIdentifiers,
+            'existingIdentifierPool' => $existingIdentifierPool,
             'repoList' => $repoList,
             'metadataPrefixListSorted' => $metadataPrefixListSorted,
             'activeRepoId' => $activeRepoId,
@@ -254,11 +261,12 @@ class ImportController extends AbstractController
         // do the update run
         try {
             $updater->run(['all'], [$metadataPrefix]);
+
+
         } catch (\Throwable $e) {
 
-            // @todo: Please check this safeguard.
-            // @toDo: Fehlermeldung wird von Library selbst schon abefangen, falls etwa SQL-Daten falsch. Dieser catch
-            // ... "catcht" also zumindest teilweise nicht
+            // @toDo: Fehlermeldung wird von Library selbst schon abefangen, falls etwa SQL-Daten falsch sind . Dieser ...
+            // ... catch "catcht" also zumindest teilweise nicht
             $this->logger->critical('Unexpected error while writing records to database:', [
                 'error' => $e->getMessage(),
             ]);
@@ -289,7 +297,7 @@ class ImportController extends AbstractController
         }
 
         /* @todo: Maybe provide a translation file to collect messages there */
-        FlashMessage::add("Produkt erfolgreich importiert.", FlashMessage::TYPE_SUCCESS);
+        FlashMessage::add("Product successfully imported.", FlashMessage::TYPE_SUCCESS);
         Redirect::to('list', 'import');
 
     }

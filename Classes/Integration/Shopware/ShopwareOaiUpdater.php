@@ -4,7 +4,6 @@ namespace RKW\OaiConnector\Integration\Shopware;
 
 use RKW\OaiConnector\Repository\OaiSetRepository;
 use RKW\OaiConnector\Utility\MarcXmlBuilder;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * Class ShopwareOaiUpdater
@@ -184,6 +183,10 @@ class ShopwareOaiUpdater extends \Oai_Updater
     {
         // If it's an array, return its 'datestamp' field
         if (is_array($f) && isset($f['datestamp'])) {
+
+            // @toDo: Obwohl ich in der transformProduct-Funktion (ShopwareData.php) den datestamp mit dem shopware ...
+            // ... "updatedAt" belege und hier übergebe, haben wir am Ende stets einen aktuellen timestamp im feld
+            // -> Rein logisch kein Beinbruch im Sinne der Ablauflogik, da wir "lastImportDatestamp" mit "shopwareUpdatedAt" vergleichen können
             return $f['datestamp'];
         }
 

@@ -6,7 +6,6 @@ use PDO;
 use PDOException;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\Pagination;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * AbstractRepository
@@ -438,9 +437,32 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         $params = [];
 
         foreach ($criteria as $column => $value) {
-            $paramName = ':' . $column;
-            $whereClauses[] = "$column = $paramName";
-            $params[$paramName] = $value;
+
+            // Support IN() queries when value is an array
+            if (is_array($value)) {
+                // Empty array → condition can never be true, avoid "IN ()" syntax error
+                if ($value === []) {
+                    $whereClauses[] = '1 = 0';
+                    continue;
+                }
+
+                $placeholders = [];
+                foreach ($value as $idx => $singleValue) {
+                    $paramName = ':' . $column . '_' . $idx;
+                    $placeholders[] = $paramName;
+                    $params[$paramName] = $singleValue;
+                }
+
+                $whereClauses[] = sprintf(
+                    '%s IN (%s)',
+                    $column,
+                    implode(', ', $placeholders)
+                );
+            } else {
+                $paramName = ':' . $column;
+                $whereClauses[] = "$column = $paramName";
+                $params[$paramName] = $value;
+            }
         }
 
         $this->applyRepoContextToWhere($whereClauses, $params);
@@ -453,7 +475,11 @@ abstract class AbstractRepository implements RepoContextAwareInterface
         */
 
 
-        $sql = 'SELECT * FROM ' . $this->getTableName() . ' WHERE ' . implode(' AND ', $whereClauses);
+        $sql = 'SELECT * FROM ' . $this->getTableName();
+
+        if (!empty($whereClauses)) {
+            $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
+        }
 
         if (!empty($sorts)) {
             $orderParts = [];

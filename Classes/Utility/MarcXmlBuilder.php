@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RKW\OaiConnector\Utility;
 
-use Symfony\Component\VarDumper\VarDumper;
 
 class MarcXmlBuilder
 {
@@ -498,6 +497,10 @@ class MarcXmlBuilder
         if ($base === '') {
             return '';
         }
+
+
+        // @toDo: URL erstell Logik zu ShopwareData-Utility-Klass auslagern?
+
 
         $productIdShopware = trim($f['identifier'] ?? '');
         $customFields  = $f['customFields'] ?? [];

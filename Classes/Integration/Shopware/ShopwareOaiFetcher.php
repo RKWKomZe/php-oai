@@ -7,7 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Psr\Log\LoggerInterface;
 use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Utility\ConfigLoader;
-use Symfony\Component\VarDumper\VarDumper;
+use RKW\OaiConnector\Utility\ShopwareData;
 
 /**
  * Class ShopwareOaiFetcher
@@ -79,7 +79,7 @@ class ShopwareOaiFetcher
 
         $records = [];
         foreach ($productList['data'] as $product) {
-            $records[] = $this->transformProduct($product);
+            $records[] = ShopwareData::transformProduct($product);
         }
         return $records;
     }
@@ -116,39 +116,8 @@ class ShopwareOaiFetcher
         $product = $productItem['data'][0] ?? null;
 
         return $product
-            ? $this->transformProduct($product)
+            ? ShopwareData::transformProduct($product)
             : null;
-    }
-
-
-    /**
-     * Transforms a product array into a standardized format.
-     *
-     * @param array $product The product data to transform.
-     * @return array The transformed product data.
-     */
-    protected function transformProduct(array $product): array
-    {
-
-        $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
-        $description = $product['translated']['description'] ?? '';
-        $createdAt = $product['createdAt'] ?? date('Y-m-d');
-
-        return [
-            'identifier' => $product['id'],
-            'datestamp' => $createdAt,
-            'title' => trim($title),
-            'description' => $description,
-            'url' => $this->baseUrl . "/detail/{$product['id']}",
-
-            'productNumber' => $product['productNumber'] ?? '',
-            'releaseDate' => $product['releaseDate'] ?? '',
-            'categoryIds' => $product['categoryIds'] ?? [],
-            'customFields' => $product['customFields'] ?? [],
-            'properties' => $product['properties'] ?? [],
-
-        ];
-
     }
 
 

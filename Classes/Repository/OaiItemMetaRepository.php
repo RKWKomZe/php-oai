@@ -33,6 +33,28 @@ class OaiItemMetaRepository extends AbstractRepository
 
 
     /**
+     * Applies repository-specific context to SQL query conditions.
+     *
+     * @param array &$whereClauses An array of SQL `WHERE` clause components to be modified.
+     * @param array &$params An associative array of parameters used in the SQL query, to which the repository context will be appended.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the repository context is not set but expected.
+     */
+    protected function applyRepoContextToWhere(array &$whereClauses, array &$params): void
+    {
+        parent::applyRepoContextToWhere($whereClauses, $params);
+
+        // Always ignore historical rows
+        $whereClauses[] = 'history = 0';
+
+        // Always ignore deleted rows
+        $whereClauses[] = 'deleted = 0';
+    }
+
+
+    /**
      * Find all items by repo ID, optionally paginated.
      *
      * @param int $repoId
@@ -73,6 +95,8 @@ class OaiItemMetaRepository extends AbstractRepository
 
     /**
      * find all by ID list
+     *
+     * @deprecated Does not use "history" and "deleted" flags. Use "findBy" function instead
      *
      * @param string $repoId
      * @param array $prefixedIds
