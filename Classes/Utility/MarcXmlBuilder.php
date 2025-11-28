@@ -59,7 +59,7 @@ class MarcXmlBuilder
         $this->addControl001($f);
 
         // Descriptive fields
-        $this->addCreatorsFromProperties($f);
+        $this->addCreators100And700($f);
         $this->addTitle245($f);
         $this->addPublisherAndPlaceAndYear264($f);
         $this->addIsbnIssnAndProductNumber($f);
@@ -71,7 +71,7 @@ class MarcXmlBuilder
         $this->addElectronicLocation856($f);
         $this->addJournal773($f);
         $this->addIssue362($f);
-        $this->addBundleRelations($f);
+        $this->addBundleHostAndChildren($f);
         $this->addCategories690($f);
 
         return $this->doc->saveXML($this->record);
@@ -152,17 +152,19 @@ class MarcXmlBuilder
         $df245->setAttribute('ind1', $ind1);
         $df245->setAttribute('ind2', $ind2);
 
+        // Clean up trailing ISBD-style punctuation from main title
+        // (slash, colon, semicolon, spaces)
         $aText = rtrim($title, " /:;");
-        if ($subtitle !== '') {
-            $aText .= ' :';
-        }
 
         $sfA = $this->doc->createElement('subfield', $aText);
         $sfA->setAttribute('code', 'a');
         $df245->appendChild($sfA);
 
         if ($subtitle !== '') {
-            $sfB = $this->doc->createElement('subfield', $subtitle);
+            // Avoid leading/trailing punctuation artifacts in subtitle
+            $bText = trim($subtitle, " /:;");
+
+            $sfB = $this->doc->createElement('subfield', $bText);
             $sfB->setAttribute('code', 'b');
             $df245->appendChild($sfB);
         }
@@ -208,7 +210,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addCreatorsFromProperties(array $f): void
+    protected function addCreators100And700(array $f): void
     {
         $properties = $f['properties'] ?? null;
 
@@ -249,9 +251,15 @@ class MarcXmlBuilder
         $df100->setAttribute('ind1', '1');
         $df100->setAttribute('ind2', ' ');
 
+        // 100 $a – personal name
         $sfA = $this->doc->createElement('subfield', $authors[0]);
         $sfA->setAttribute('code', 'a');
         $df100->appendChild($sfA);
+
+        // 100 $4 – relator code ("aut" = author)
+        $sf4 = $this->doc->createElement('subfield', 'aut');
+        $sf4->setAttribute('code', '4');
+        $df100->appendChild($sf4);
 
         $this->record->appendChild($df100);
 
@@ -268,9 +276,15 @@ class MarcXmlBuilder
                 $df700->setAttribute('ind1', '1');
                 $df700->setAttribute('ind2', ' ');
 
+                // 700 $a – personal name
                 $sfA = $this->doc->createElement('subfield', $authorName);
                 $sfA->setAttribute('code', 'a');
                 $df700->appendChild($sfA);
+
+                // 700 $4 – relator code ("aut" = author)
+                $sf4 = $this->doc->createElement('subfield', 'aut');
+                $sf4->setAttribute('code', '4');
+                $df700->appendChild($sf4);
 
                 $this->record->appendChild($df700);
             }
@@ -438,12 +452,20 @@ class MarcXmlBuilder
             return;
         }
 
+        // --- Clean description ---
+        // Remove HTML tags and trim the result
+        // (MARCXML requires plain text; HTML would break validation)
+        $cleanDescription = trim(strip_tags($description));
+
+        // Escape for XML safety
+        $cleanDescription = htmlspecialchars($cleanDescription);
+
         $df520 = $this->doc->createElement('datafield');
         $df520->setAttribute('tag', '520');
         $df520->setAttribute('ind1', ' ');
         $df520->setAttribute('ind2', ' ');
 
-        $sfA = $this->doc->createElement('subfield', $description);
+        $sfA = $this->doc->createElement('subfield', $cleanDescription);
         $sfA->setAttribute('code', 'a');
         $df520->appendChild($sfA);
 
@@ -468,15 +490,30 @@ class MarcXmlBuilder
             return;
         }
 
+        // --- Determine file format for subfield $q ---
+        // Extract file extension from URL (fallback: 'pdf')
+        $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        if ($ext === '') {
+            $ext = 'pdf'; // Default assumption if no extension visible
+        }
+
         $df856 = $this->doc->createElement('datafield');
         $df856->setAttribute('tag', '856');
         $df856->setAttribute('ind1', '4');
-        $df856->setAttribute('ind2', '0');
+        // DNB practice: second indicator is usually blank
+        $df856->setAttribute('ind2', ' ');
 
+        // 856 $q – file format
+        $sfQ = $this->doc->createElement('subfield', $ext);
+        $sfQ->setAttribute('code', 'q');
+        $df856->appendChild($sfQ);
+
+        // 856 $u – URL
         $sfU = $this->doc->createElement('subfield', $url);
         $sfU->setAttribute('code', 'u');
         $df856->appendChild($sfU);
 
+        // 856 $y – link display text (optional)
         $sfY = $this->doc->createElement('subfield', 'Digital publication');
         $sfY->setAttribute('code', 'y');
         $df856->appendChild($sfY);
@@ -591,7 +628,7 @@ class MarcXmlBuilder
 
 
     // ---------------------------------------------------------------------
-    // 773/774 bundle relations
+    // 773/774 bundle relations (in Shopware context: Child-elements of parent)
     // ---------------------------------------------------------------------
 
     /**
@@ -599,7 +636,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addBundleRelations(array $f): void
+    protected function addBundleHostAndChildren(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
 

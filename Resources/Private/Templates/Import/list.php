@@ -31,15 +31,13 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
         <p class="mb-1">
             The selected repository is required and allows the system to indicate whether a given product has already been imported into it.
         </p>
-        <p class="mb-0">
+        <p class="mb-3">
             To import products into the OAI system, use the action buttons shown next to each record.
         </p>
+        <p class="mb-0">
+            <strong>Hint:</strong> Only records that are updated again in Shopware after the import can be imported repeatedly. The decisive factors are the ‘updated’ from the OAI database and the ‘updatedAt’ field from Shopware. If an update of an already imported record is possible, a corresponding button is displayed in the corresponding box.
+        </p>
     </div>
-</div>
-
-<div class="alert alert-info" role="alert">
-    <strong>Hint:</strong>
-    Only records that are updated again in Shopware after the import can be imported repeatedly. The decisive factors are the ‘updated’ from the OAI database and the ‘updatedAt’ field from Shopware. If an update of an already imported record is possible, a corresponding button is displayed in the corresponding box.
 </div>
 
 <div class="alert alert-light" role="alert">
@@ -215,7 +213,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                         <?php endif; ?>
                         <p class="card-text mb-1"><strong>Article number:</strong> <?= htmlspecialchars($product['productNumber']) ?></p>
                         <p class="card-text mb-1"><strong>Manufacturer:</strong> <?= htmlspecialchars($product['manufacturer']['name'] ?? '-') ?></p>
-                        <p class="card-text mb-1"><strong>Description:</strong> <?= htmlspecialchars($product['description'] ?? '-') ?></p>
+                        <p class="card-text mb-1"><strong>Description:</strong> <?= htmlspecialchars(strip_tags($product['description'] ?? '-')) ?></p>
                         <p class="card-text mb-1"><strong>Created at:</strong> <?= htmlspecialchars($product['createdAt']) ?></p>
                         <p class="card-text mb-1"><strong>Updated at:</strong> <?= htmlspecialchars($product['updatedAt']) ?></p>
                         <p class="card-text mb-1"><strong>Active:</strong> <?= $product['active'] ? 'Ja' : 'Nein' ?></p>
