@@ -52,16 +52,18 @@ use RKW\OaiConnector\Utility\MenuHelper;
                                 'dropdown-item'
                             ); ?>
                         </li>
-                        <li>
-                            <?php echo MenuHelper::renderMenuLink(
-                                'set',
-                                'list',
-                                'OAI Set',
-                                [],
-                                [],
-                                'dropdown-item'
-                            ); ?>
-                        </li>
+                        <!--
+                            <li>
+                                <?php echo MenuHelper::renderMenuLink(
+                                    'set',
+                                    'list',
+                                    'OAI Set',
+                                    [],
+                                    [],
+                                    'dropdown-item'
+                                ); ?>
+                            </li>
+                        -->
                     </ul>
                 </li>
                 <li class="nav-item dropdown">

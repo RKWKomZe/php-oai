@@ -332,6 +332,8 @@ class ShopwareOaiUpdater extends \Oai_Updater
 
          */
 
+        return [];
+
         // solution a little bit stupid, works only with one Set. Maybe the Set-Selection should work through shopware
         // categories or somewhat else
         $oaiRepoSet = $this->oaiSetRepository
