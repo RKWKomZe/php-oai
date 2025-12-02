@@ -239,6 +239,10 @@ class ImportController extends AbstractController
         $fetcher = new ShopwareOaiFetcher();
         $records = $fetcher->fetchSingleById($identifier);
 
+
+        // @toDo: Add validation for alle Felder mit (O) oder (O/F) aus Steffen dokument
+
+
         // 2. Passed to OAI Updater
         $updater = new ShopwareOaiUpdater(
             $dbConfig['host'],
