@@ -2,6 +2,8 @@
 
 namespace RKW\OaiConnector\Utility;
 
+use Symfony\Component\VarDumper\VarDumper;
+
 /**
  * ShopwareData
  *
@@ -32,7 +34,7 @@ class ShopwareData
             'description' => $description,
             'productNumber' => $product['productNumber'] ?? '',
             'releaseDate' => $product['releaseDate'] ?? '',
-            'categoryIds' => $product['categoryIds'] ?? [],
+            'categories' => $product['categories'] ?? [],
             'customFields' => $product['customFields'] ?? [],
             'properties' => $product['properties'] ?? [],
 

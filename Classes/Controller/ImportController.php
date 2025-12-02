@@ -15,6 +15,7 @@ use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\Redirect;
 use RKW\OaiConnector\Utility\ShopwareData;
+use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * ImportController

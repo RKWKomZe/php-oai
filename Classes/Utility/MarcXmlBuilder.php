@@ -710,21 +710,26 @@ class MarcXmlBuilder
      */
     protected function addCategories690(array $f): void
     {
-        $categoryIds = array_values(
-            array_filter(
-                (array)($f['categoryIds'] ?? []),
-                static fn($v) => trim((string)$v) !== ''
-            )
-        );
+        // Use categories instead of categoryIds
+        $categories = (array)($f['categories'] ?? []);
 
-        foreach ($categoryIds as $catId) {
+        foreach ($categories as $category) {
+
+            // If for any reason there is no name in it: skip
+            $name = trim($category['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
             $df690 = $this->doc->createElement('datafield');
             $df690->setAttribute('tag', '690');
             $df690->setAttribute('ind1', ' ');
             $df690->setAttribute('ind2', ' ');
-            $sfA = $this->doc->createElement('subfield', (string)$catId);
+
+            $sfA = $this->doc->createElement('subfield', $name);
             $sfA->setAttribute('code', 'a');
             $df690->appendChild($sfA);
+
             $this->record->appendChild($df690);
         }
     }

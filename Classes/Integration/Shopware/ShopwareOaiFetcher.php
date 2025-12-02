@@ -237,6 +237,9 @@ class ShopwareOaiFetcher
                     'Accept' => 'application/json',
                 ],
                 'json' => [
+                    'includes' => [
+                        'category' => ['id', 'name']
+                    ],
                     'associations' => [
                         'cover' => [
                             'associations' => [
@@ -249,6 +252,9 @@ class ShopwareOaiFetcher
                             ]
                         ],
                         'manufacturer' => [],
+                        'categories' => [
+
+                        ],
                     ],
                     'filter' => $filters,
                     'limit' => $limit,
