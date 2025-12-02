@@ -14,7 +14,7 @@ return [
         'basePath' => realpath(__DIR__ . '/../'),
     ],
     'oai' => [
-        'defaultRepoId' => 'maxtest',
+        'defaultRepoId' => $_ENV['DEFAULT_REPO'],
     ],
     'api' => [
         'shopware' => [
