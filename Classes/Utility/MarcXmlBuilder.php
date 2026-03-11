@@ -55,23 +55,28 @@ class MarcXmlBuilder
         $this->initDocument();
 
         // Core control/leader
-        $this->addLeader();
+        $this->addLeader($f);
         $this->addControl001($f);
+        $this->addControl007();
+        $this->addControl008($f);
 
         // Descriptive fields
-        $this->addCreators100And700($f);
+        if (!$this->isMagazineIssueType($f)) {
+            $this->addCreators100And700($f);
+        }
         $this->addTitle245($f);
         $this->addPublisherAndPlaceAndYear264($f);
         $this->addIsbnIssnAndProductNumber($f);
-        $this->addAccess506($f);
+        $this->addAccess093($f);
+        $this->addLicense506($f);
         $this->addAbstract520($f);
         $this->addLanguage041($f);
 
         // Relations and URLs
         $this->addElectronicLocation856($f);
-        $this->addJournal773($f);
-        $this->addIssue362($f);
-        $this->addBundleHostAndChildren($f);
+        $this->addIssueEnumeration773($f);
+        $this->addIssueLink773($f);
+        $this->addBundleRelations($f);
         $this->addCategories690($f);
 
         return $this->doc->saveXML($this->record);
@@ -100,10 +105,53 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addLeader(): void
+    protected function addLeader(array $f): void
     {
-        $leader = $this->doc->createElement('leader', '00000nam a2200000 a 4500');
+        $publicationCode = $this->resolveLeaderTypeCode($f);
+        $leader = $this->doc->createElement('leader', '00000' . $publicationCode . ' a2200000uc 4500');
         $this->record->appendChild($leader);
+    }
+
+
+    /**
+     * MARC control field 007 is mandatory for DNB import.
+     *
+     * @throws \DOMException
+     */
+    protected function addControl007(): void
+    {
+        $cf007 = $this->doc->createElement('controlfield', 'cr|||||');
+        $cf007->setAttribute('tag', '007');
+        $this->record->appendChild($cf007);
+    }
+
+
+    /**
+     * MARC control field 008 has fixed positions (40 chars).
+     *
+     * @param array $f
+     * @return void
+     * @throws \DOMException
+     */
+    protected function addControl008(array $f): void
+    {
+        $enteredOnFile = (new \DateTimeImmutable())->format('ymd');
+        $year = $this->extractPublicationYear($f);
+        $language = $this->resolvePrimaryLanguageCode($f);
+
+        // 40 chars: date entered + publication status + year + fixed defaults + language
+        $value = sprintf(
+            '%ss%s    gw u||p|o ||| 0||||1%s  ',
+            $enteredOnFile,
+            $year,
+            $language
+        );
+
+        $value = str_pad(substr($value, 0, 40), 40, ' ');
+
+        $cf008 = $this->doc->createElement('controlfield', $value);
+        $cf008->setAttribute('tag', '008');
+        $this->record->appendChild($cf008);
     }
 
 
@@ -410,25 +458,48 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addAccess506(array $f): void
+    protected function addAccess093(array $f): void
     {
         $access = trim($f['customFields']['custom_product_oai_access'] ?? '');
-        if ($access === '') {
-            $access = 'b';
+        if (!in_array($access, ['a', 'b'], true)) {
+            $access = 'b'; // default unrestricted archive access
+        }
+
+        $df093 = $this->doc->createElement('datafield');
+        $df093->setAttribute('tag', '093');
+        $df093->setAttribute('ind1', ' ');
+        $df093->setAttribute('ind2', ' ');
+
+        $sfB = $this->doc->createElement('subfield', $access);
+        $sfB->setAttribute('code', 'b');
+        $df093->appendChild($sfB);
+
+        $this->record->appendChild($df093);
+    }
+
+
+    /**
+     * Optional license hint for the original object.
+     *
+     * @param array $f
+     * @return void
+     * @throws \DOMException
+     */
+    protected function addLicense506(array $f): void
+    {
+        $license = trim((string)($f['customFields']['custom_product_oai_license'] ?? ''));
+        if ($license === '') {
+            return;
         }
 
         $df506 = $this->doc->createElement('datafield');
         $df506->setAttribute('tag', '506');
-        $df506->setAttribute('ind1', ' ');
+        $df506->setAttribute('ind1', '0');
         $df506->setAttribute('ind2', ' ');
 
-        $sfF = $this->doc->createElement('subfield', $access);
-        $sfF->setAttribute('code', 'f');
-        $df506->appendChild($sfF);
-
-        $sf2 = $this->doc->createElement('subfield', 'local');
-        $sf2->setAttribute('code', '2');
-        $df506->appendChild($sf2);
+        $sfA = $this->doc->createElement('subfield', $license);
+        $sfA->setAttribute('code', 'a');
+        $df506->appendChild($sfA);
 
         $this->record->appendChild($df506);
     }
@@ -448,6 +519,7 @@ class MarcXmlBuilder
         $customFields = $f['customFields'] ?? [];
         $description  = ($customFields['custom_meta_covertext'] ?? '') ?: ($f['description'] ?? '');
 
+        $description = $this->sanitizeText($description);
         if ($description === '') {
             return;
         }
@@ -490,33 +562,19 @@ class MarcXmlBuilder
             return;
         }
 
-        // --- Determine file format for subfield $q ---
-        // Extract file extension from URL (fallback: 'pdf')
-        $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
-        if ($ext === '') {
-            $ext = 'pdf'; // Default assumption if no extension visible
-        }
-
         $df856 = $this->doc->createElement('datafield');
         $df856->setAttribute('tag', '856');
         $df856->setAttribute('ind1', '4');
-        // DNB practice: second indicator is usually blank
-        $df856->setAttribute('ind2', ' ');
-
-        // 856 $q – file format
-        $sfQ = $this->doc->createElement('subfield', $ext);
-        $sfQ->setAttribute('code', 'q');
-        $df856->appendChild($sfQ);
+        $df856->setAttribute('ind2', '0');
 
         // 856 $u – URL
         $sfU = $this->doc->createElement('subfield', $url);
         $sfU->setAttribute('code', 'u');
         $df856->appendChild($sfU);
 
-        // 856 $y – link display text (optional)
-        $sfY = $this->doc->createElement('subfield', 'Digital publication');
-        $sfY->setAttribute('code', 'y');
-        $df856->appendChild($sfY);
+        $sfX = $this->doc->createElement('subfield', 'Transfer-URL');
+        $sfX->setAttribute('code', 'x');
+        $df856->appendChild($sfX);
 
         $this->record->appendChild($df856);
     }
@@ -539,26 +597,44 @@ class MarcXmlBuilder
         // @toDo: URL erstell Logik zu ShopwareData-Utility-Klass auslagern?
 
 
-        $productIdShopware = trim($f['identifier'] ?? '');
         $customFields  = $f['customFields'] ?? [];
+        $direct = trim((string)($customFields['custom_product_oai_transfer_url'] ?? ''));
+        if ($direct !== '') {
+            return $direct;
+        }
+
+        $identifier = trim((string)($f['identifier'] ?? ''));
         $resourceType  = trim($customFields['custom_product_oai_resource_type'] ?? '');
 
-        if ($productIdShopware === '' || $resourceType === '') {
+        if ($resourceType === '' || $identifier === '') {
             return '';
         }
 
         switch ($resourceType) {
             case 'am':
-                $path = '/oai/shop/download/' . rawurlencode($productIdShopware);
-                break;
             case 'ab':
-                $path = '/oai/shop/show/' . rawurlencode($productIdShopware);
+                $path = '/oai/shop/download/' . rawurlencode($identifier);
                 break;
             default:
                 return '';
         }
 
         return $base . $path;
+    }
+
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private function slugify(string $value): string
+    {
+        $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+        $value = preg_replace('/[^A-Za-z0-9]+/', '-', $value);
+        $value = trim((string)$value, '-');
+        $value = strtolower($value);
+
+        return $value;
     }
 
 
@@ -572,24 +648,32 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addJournal773(array $f): void
+    protected function addIssueLink773(array $f): void
     {
-        $customFields = $f['customFields'] ?? [];
-        $resourceType = trim($customFields['custom_product_oai_resource_type'] ?? '');
-        $journalTitle = trim($customFields['custom_product_oai_identifier_journal'] ?? '');
+        if (!$this->isMagazineIssueType($f)) {
+            return;
+        }
 
-        if ($resourceType !== 'ab' || $journalTitle === '') {
+        $customFields = $f['customFields'] ?? [];
+        $linkingId = trim((string)($customFields['custom_product_oai_identifier_journal'] ?? ''));
+        if ($linkingId === '') {
+            return;
+        }
+
+        $linkingId = preg_replace('/[^A-Za-z0-9._-]+/', '-', $linkingId);
+        $linkingId = trim((string)$linkingId, '-');
+        if ($linkingId === '') {
             return;
         }
 
         $df773 = $this->doc->createElement('datafield');
         $df773->setAttribute('tag', '773');
-        $df773->setAttribute('ind1', '0');
-        $df773->setAttribute('ind2', ' ');
+        $df773->setAttribute('ind1', '1');
+        $df773->setAttribute('ind2', '8');
 
-        $sfT = $this->doc->createElement('subfield', $journalTitle);
-        $sfT->setAttribute('code', 't');
-        $df773->appendChild($sfT);
+        $sfO = $this->doc->createElement('subfield', $linkingId);
+        $sfO->setAttribute('code', 'o');
+        $df773->appendChild($sfO);
 
         $this->record->appendChild($df773);
     }
@@ -604,31 +688,59 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addIssue362(array $f): void
+    protected function addIssueEnumeration773(array $f): void
     {
-        $customFields = $f['customFields'] ?? [];
-        $resourceType = trim($customFields['custom_product_oai_resource_type'] ?? '');
-        $issue        = trim($customFields['custom_product_oai_issue'] ?? '');
-
-        if ($resourceType !== 'ab' || $issue === '') {
+        if (!$this->isMagazineIssueType($f)) {
             return;
         }
 
-        $df362 = $this->doc->createElement('datafield');
-        $df362->setAttribute('tag', '362');
-        $df362->setAttribute('ind1', '0');
-        $df362->setAttribute('ind2', ' ');
+        $customFields = $f['customFields'] ?? [];
+        $issue        = trim((string)($customFields['custom_product_oai_issue'] ?? ''));
+        $releaseDate  = trim((string)($f['releaseDate'] ?? ''));
+        $year = $this->extractPublicationYear($f);
 
-        $sfA = $this->doc->createElement('subfield', $issue);
-        $sfA->setAttribute('code', 'a');
-        $df362->appendChild($sfA);
+        $gValues = [];
+        if ($issue !== '') {
+            $gValues[] = 'number:' . $issue;
+        }
+        if ($year !== '0000') {
+            $gValues[] = 'year:' . $year;
+        }
+        if ($releaseDate !== '') {
+            try {
+                $date = new \DateTimeImmutable($releaseDate);
+                $gValues[] = 'month:' . $date->format('m');
+                $gValues[] = 'day:' . $date->format('d');
+            } catch (\Throwable $e) {
+                // keep output stable even with invalid source values
+            }
+        }
 
-        $this->record->appendChild($df362);
+        if ($gValues === []) {
+            return;
+        }
+
+        $df773 = $this->doc->createElement('datafield');
+        $df773->setAttribute('tag', '773');
+        $df773->setAttribute('ind1', '1');
+        $df773->setAttribute('ind2', ' ');
+
+        foreach ($gValues as $gValue) {
+            $sfG = $this->doc->createElement('subfield', $gValue);
+            $sfG->setAttribute('code', 'g');
+            $df773->appendChild($sfG);
+        }
+
+        $sf7 = $this->doc->createElement('subfield', 'nnas');
+        $sf7->setAttribute('code', '7');
+        $df773->appendChild($sf7);
+
+        $this->record->appendChild($df773);
     }
 
 
     // ---------------------------------------------------------------------
-    // 773/774 bundle relations (in Shopware context: Child-elements of parent)
+    // 773/774 bundle relations
     // ---------------------------------------------------------------------
 
     /**
@@ -636,7 +748,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addBundleHostAndChildren(array $f): void
+    protected function addBundleRelations(array $f): void
     {
         $customFields = $f['customFields'] ?? [];
 
@@ -710,28 +822,36 @@ class MarcXmlBuilder
      */
     protected function addCategories690(array $f): void
     {
-        // Use categories instead of categoryIds
-        $categories = (array)($f['categories'] ?? []);
-
-        foreach ($categories as $category) {
-
-            // If for any reason there is no name in it: skip
-            $name = trim($category['name'] ?? '');
-            if ($name === '') {
-                continue;
-            }
-
-            $df690 = $this->doc->createElement('datafield');
-            $df690->setAttribute('tag', '690');
-            $df690->setAttribute('ind1', ' ');
-            $df690->setAttribute('ind2', ' ');
-
-            $sfA = $this->doc->createElement('subfield', $name);
-            $sfA->setAttribute('code', 'a');
-            $df690->appendChild($sfA);
-
-            $this->record->appendChild($df690);
+        $rawKeywords = $f['categoryNames'] ?? null;
+        if (!is_array($rawKeywords) || $rawKeywords === []) {
+            $rawKeywords = (array)($f['categoryIds'] ?? []);
         }
+
+        $keywords = [];
+        foreach ((array)$rawKeywords as $value) {
+            $value = $this->sanitizeText((string)$value);
+            if ($value !== '') {
+                $keywords[] = $value;
+            }
+        }
+        $keywords = array_values(array_unique($keywords));
+
+        if ($keywords === []) {
+            return;
+        }
+
+        $df653 = $this->doc->createElement('datafield');
+        $df653->setAttribute('tag', '653');
+        $df653->setAttribute('ind1', ' ');
+        $df653->setAttribute('ind2', ' ');
+
+        foreach ($keywords as $keyword) {
+            $sfA = $this->doc->createElement('subfield', $keyword);
+            $sfA->setAttribute('code', 'a');
+            $df653->appendChild($sfA);
+        }
+
+        $this->record->appendChild($df653);
     }
 
 
@@ -799,5 +919,108 @@ class MarcXmlBuilder
         }
 
         $this->record->appendChild($df041);
+    }
+
+
+    /**
+     * @param array $f
+     * @return bool
+     */
+    private function isMagazineIssueType(array $f): bool
+    {
+        $customFields = $f['customFields'] ?? [];
+        $resourceType = strtolower(trim((string)($customFields['custom_product_oai_resource_type'] ?? '')));
+        $publicationType = strtolower(trim((string)($customFields['custom_product_oai_publication_type'] ?? '')));
+
+        return $resourceType === 'ab' || $publicationType === 'issue';
+    }
+
+
+    /**
+     * @param array $f
+     * @return string
+     */
+    private function resolveLeaderTypeCode(array $f): string
+    {
+        $customFields = $f['customFields'] ?? [];
+        $publicationType = strtolower(trim((string)($customFields['custom_product_oai_publication_type'] ?? '')));
+        $resourceType = strtolower(trim((string)($customFields['custom_product_oai_resource_type'] ?? '')));
+
+        if ($publicationType === 'article' || $resourceType === 'aa') {
+            return 'naa';
+        }
+        if ($publicationType === 'issue' || $resourceType === 'ab') {
+            return 'nab';
+        }
+
+        return 'nam';
+    }
+
+
+    /**
+     * @param array $f
+     * @return string
+     */
+    private function extractPublicationYear(array $f): string
+    {
+        $yearRaw = trim((string)($f['releaseDate'] ?? ''));
+        $year = preg_match('/^\d{4}/', $yearRaw) ? substr($yearRaw, 0, 4) : '';
+        if ($year === '' || $year === '0000') {
+            $year = (new \DateTimeImmutable())->format('Y');
+        }
+
+        return $year;
+    }
+
+
+    /**
+     * @param array $f
+     * @return string
+     */
+    private function resolvePrimaryLanguageCode(array $f): string
+    {
+        $langRaw = $f['customFields']['custom_product_oai_language'] ?? '';
+
+        $token = '';
+        if (is_array($langRaw) && $langRaw !== []) {
+            $token = (string)$langRaw[0];
+        } elseif (is_string($langRaw) && $langRaw !== '') {
+            $parts = preg_split('/[,\;\s]+/u', $langRaw, -1, PREG_SPLIT_NO_EMPTY);
+            $token = (string)($parts[0] ?? '');
+        }
+
+        $token = mb_strtolower(trim($token), 'UTF-8');
+        $map2to3 = [
+            'de' => 'ger', 'en' => 'eng', 'fr' => 'fre', 'es' => 'spa', 'it' => 'ita',
+            'nl' => 'dut', 'cs' => 'cze', 'sk' => 'slo', 'ro' => 'rum', 'alb' => 'alb',
+            'pt' => 'por', 'ru' => 'rus', 'pl' => 'pol', 'da' => 'dan', 'sv' => 'swe',
+            'no' => 'nor', 'fi' => 'fin', 'hu' => 'hun', 'tr' => 'tur', 'el' => 'gre',
+            'zh' => 'chi', 'ja' => 'jpn', 'ko' => 'kor', 'ar' => 'ara',
+        ];
+
+        if (isset($map2to3[$token])) {
+            return $map2to3[$token];
+        }
+        if ((bool)preg_match('/^[a-z]{3}$/', $token)) {
+            return $token;
+        }
+
+        return 'ger';
+    }
+
+
+    /**
+     * Normalize free-text fields for MARCXML output.
+     *
+     * @param string $value
+     * @return string
+     */
+    private function sanitizeText(string $value): string
+    {
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = strip_tags($value);
+        $value = preg_replace('/\s+/u', ' ', (string)$value);
+
+        return trim((string)$value);
     }
 }

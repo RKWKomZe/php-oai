@@ -18,5 +18,8 @@
 .DS_Store
 Thumbs.db
 
+# PHPUnit cache
+.phpunit.cache/
+
 # Umgebungsspezifisch
 .env
