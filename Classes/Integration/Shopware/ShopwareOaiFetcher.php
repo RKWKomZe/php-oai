@@ -133,6 +133,7 @@ class ShopwareOaiFetcher
         $title = $product['translated']['name'] ?? $product['name'] ?? 'Kein Titel';
         $description = $product['translated']['description'] ?? '';
         $createdAt = $product['createdAt'] ?? date('Y-m-d');
+        $categoryNames = $this->extractCategoryNames($product);
 
         return [
             'identifier' => $product['id'],
@@ -144,6 +145,7 @@ class ShopwareOaiFetcher
             'productNumber' => $product['productNumber'] ?? '',
             'releaseDate' => $product['releaseDate'] ?? '',
             'categoryIds' => $product['categoryIds'] ?? [],
+            'categoryNames' => $categoryNames,
             'customFields' => $product['customFields'] ?? [],
             'properties' => $product['properties'] ?? [],
 
@@ -274,6 +276,7 @@ class ShopwareOaiFetcher
                                 'media' => []
                             ]
                         ],
+                        'categories' => [],
                         'properties' => [
                             'associations' => [
                                 'group' => []
@@ -321,6 +324,42 @@ class ShopwareOaiFetcher
 
         }
 
+    }
+
+    /**
+     * Extract human-readable category names from a product payload.
+     *
+     * The Shopware API may return categories either as a flat array or
+     * wrapped inside a "data" key depending on the association mode.
+     *
+     * @param array $product
+     * @return array
+     */
+    private function extractCategoryNames(array $product): array
+    {
+        $categories = $product['categories'] ?? null;
+        if (!is_array($categories)) {
+            return [];
+        }
+
+        $items = $categories;
+        if (array_key_exists('data', $categories) && is_array($categories['data'])) {
+            $items = $categories['data'];
+        }
+
+        $names = [];
+        foreach ($items as $category) {
+            if (!is_array($category)) {
+                continue;
+            }
+            $name = $category['translated']['name'] ?? $category['name'] ?? '';
+            $name = trim((string)$name);
+            if ($name !== '') {
+                $names[] = $name;
+            }
+        }
+
+        return array_values(array_unique($names));
     }
 
 

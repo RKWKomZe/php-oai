@@ -42,6 +42,11 @@ document.addEventListener('DOMContentLoaded', function () {
         button.addEventListener('click', async (event) => {
             event.preventDefault();
 
+            if (button.dataset.preflightBlocked === '1' || button.classList.contains('disabled')) {
+                showError('Import blocked due to preflight errors. Check the preflight badge tooltip in the product card.');
+                return;
+            }
+
             if (!confirm('Are you sure you want to import this record?')) {
                 return;
             }

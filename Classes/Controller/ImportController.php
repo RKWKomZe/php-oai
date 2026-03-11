@@ -13,8 +13,8 @@ use RKW\OaiConnector\Repository\OaiRepoRepository;
 use RKW\OaiConnector\Utility\ConfigLoader;
 use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
+use RKW\OaiConnector\Utility\MarcXmlPreflightValidator;
 use RKW\OaiConnector\Utility\Redirect;
-use Symfony\Component\VarDumper\VarDumper;
 
 /**
  * ImportController
@@ -152,6 +152,25 @@ class ImportController extends AbstractController
 
         $existingIdentifiers = $this->oaiItemMetaRepository->findByIdList($activeRepoId, $prefixedIds);
 
+        $preflightValidator = new MarcXmlPreflightValidator();
+        $preflightByProductId = [];
+        $readinessSummary = [
+            'green' => 0,
+            'yellow' => 0,
+            'red' => 0,
+        ];
+        foreach ($dataRequest['data'] as $product) {
+            $probeRecord = $this->buildPreflightProbeRecord($product);
+            $report = $preflightValidator->validate($probeRecord);
+            $preflightByProductId[$product['id']] = $report;
+
+            $status = $report['status'] ?? 'yellow';
+            if (!isset($readinessSummary[$status])) {
+                $status = 'yellow';
+            }
+            $readinessSummary[$status]++;
+        }
+
         // filter
         /* @todo: Is this filter necessary? Or can it be removed? *&
         /*
@@ -164,6 +183,8 @@ class ImportController extends AbstractController
             //'unimportedProducts' => $unimportedProducts,
             'productList' => $dataRequest['data'],
             'existingIdentifiers' => $existingIdentifiers,
+            'preflightByProductId' => $preflightByProductId,
+            'readinessSummary' => $readinessSummary,
             'repoList' => $repoList,
             'metadataPrefixListSorted' => $metadataPrefixListSorted,
             'activeRepoId' => $activeRepoId,
@@ -174,6 +195,99 @@ class ImportController extends AbstractController
             'page' => $page,
             'totalCount' => $dataRequest['total']
         ]);
+    }
+
+
+    /**
+     * Builds a minimal pseudo-record for preflight checks directly from list payload.
+     *
+     * @param array $product
+     * @return array
+     */
+    private function buildPreflightProbeRecord(array $product): array
+    {
+        $title = trim((string)($product['translated']['name'] ?? $product['name'] ?? ''));
+
+        return [
+            'identifier' => (string)($product['id'] ?? ''),
+            'title' => $title,
+            'productNumber' => (string)($product['productNumber'] ?? ''),
+            'releaseDate' => (string)($product['releaseDate'] ?? ''),
+            'customFields' => is_array($product['customFields'] ?? null) ? $product['customFields'] : [],
+        ];
+    }
+
+
+    /**
+     * Returns DNB-readiness report for a single product as JSON.
+     *
+     * @return void
+     * @throws GuzzleException
+     * @throws \JsonException
+     */
+    public function dnbReadinessReport(): void
+    {
+        header('Content-Type: application/json');
+
+        $identifier = trim((string)($_GET['id'] ?? ''));
+        if ($identifier === '') {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Missing required parameter: id',
+            ], JSON_THROW_ON_ERROR);
+            exit;
+        }
+
+        try {
+            $payload = $this->buildDnbReadinessReportForProductId($identifier);
+        } catch (\RuntimeException $e) {
+            http_response_code(404);
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], JSON_THROW_ON_ERROR);
+            exit;
+        }
+
+        echo json_encode($payload, JSON_THROW_ON_ERROR);
+        exit;
+    }
+
+
+    /**
+     * Builds the DNB readiness payload for one product id.
+     *
+     * @param string $identifier
+     * @return array
+     * @throws GuzzleException
+     */
+    protected function buildDnbReadinessReportForProductId(string $identifier): array
+    {
+        $record = $this->getShopwareFetcher()->fetchSingleById($identifier);
+        if (!is_array($record)) {
+            throw new \RuntimeException('Product not found or could not be transformed');
+        }
+
+        $validator = new MarcXmlPreflightValidator();
+        $report = $validator->validate($record);
+
+        return [
+            'success' => true,
+            'id' => $identifier,
+            'report' => $report,
+        ];
+    }
+
+
+    /**
+     * Factory method to allow testing via override.
+     *
+     * @return ShopwareOaiFetcher
+     */
+    protected function getShopwareFetcher(): ShopwareOaiFetcher
+    {
+        return new ShopwareOaiFetcher();
     }
 
 
@@ -252,6 +366,7 @@ class ImportController extends AbstractController
         $this->logger->info('Start import', ['Identifier' => $identifier]);
 
         // do the update run
+        $caughtErrorMessage = null;
         try {
             $updater->run(['all'], [$metadataPrefix]);
         } catch (\Throwable $e) {
@@ -262,6 +377,18 @@ class ImportController extends AbstractController
             $this->logger->critical('Unexpected error while writing records to database:', [
                 'error' => $e->getMessage(),
             ]);
+            $caughtErrorMessage = $e->getMessage();
+        }
+
+        if ($caughtErrorMessage !== null) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'message' => $caughtErrorMessage]);
+                exit;
+            }
+
+            FlashMessage::add($caughtErrorMessage, FlashMessage::TYPE_DANGER);
+            Redirect::to('list', 'import');
         }
 
         // check for errors
@@ -353,6 +480,8 @@ class ImportController extends AbstractController
             $this->logger->critical('Unexpected error while writing records to database:', [
                 'error' => $e->getMessage(),
             ]);
+            FlashMessage::add('Import failed: ' . $e->getMessage(), FlashMessage::TYPE_DANGER);
+            Redirect::to('fullImport', 'Tool');
         }
 
         FlashMessage::add(count($records) . ' Products successfully imported.', FlashMessage::TYPE_SUCCESS);

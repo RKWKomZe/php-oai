@@ -2,8 +2,11 @@
 
 namespace RKW\OaiConnector\Integration\Shopware;
 
+use Psr\Log\LoggerInterface;
+use RKW\OaiConnector\Factory\LoggerFactory;
 use RKW\OaiConnector\Repository\OaiSetRepository;
 use RKW\OaiConnector\Utility\MarcXmlBuilder;
+use RKW\OaiConnector\Utility\MarcXmlPreflightValidator;
 use Symfony\Component\VarDumper\VarDumper;
 
 /**
@@ -33,6 +36,7 @@ class ShopwareOaiUpdater extends \Oai_Updater
 
 
     private ?OaiSetRepository $oaiSetRepository = null;
+    private ?LoggerInterface $logger = null;
 
 
     protected function getOaiSetRepository(): OaiSetRepository
@@ -72,6 +76,7 @@ class ShopwareOaiUpdater extends \Oai_Updater
         $this->repoId = $repo;
         $this->records = $records;
         $this->oaiSetRepository = $this->getOaiSetRepository();
+        $this->logger = LoggerFactory::get();
 
     }
 
@@ -504,6 +509,27 @@ class ShopwareOaiUpdater extends \Oai_Updater
      */
     private function renderMarcXml(array $f): string
     {
+        $validator = new MarcXmlPreflightValidator();
+        $report = $validator->validate($f);
+
+        if ($report['warnings'] !== []) {
+            $this->logger?->warning('MARCXML preflight warnings', [
+                'identifier' => $f['identifier'] ?? null,
+                'warnings' => $report['warnings'],
+            ]);
+        }
+
+        if ($report['errors'] !== []) {
+            $this->logger?->error('MARCXML preflight failed', [
+                'identifier' => $f['identifier'] ?? null,
+                'errors' => $report['errors'],
+            ]);
+            throw new \RuntimeException(
+                'MARCXML preflight failed for identifier "' . ($f['identifier'] ?? 'unknown') . '": '
+                . implode(' | ', $report['errors'])
+            );
+        }
+
         $builder = new MarcXmlBuilder();
 
         return $builder->renderRecord($f);
