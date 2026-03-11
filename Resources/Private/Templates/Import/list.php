@@ -101,6 +101,12 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
     <i class="bi bi-check-circle-fill" style="color: #198754; opacity: 0.5; font-size: 1.4rem;"></i>
     <span class="text-muted">This symbol indicates products that have already been imported</span>
 </div>
+<div class="alert alert-secondary" role="alert">
+    <strong>DNB readiness summary:</strong>
+    <span class="badge text-bg-success">Green: <?= (int)($readinessSummary['green'] ?? 0) ?></span>
+    <span class="badge text-bg-warning">Yellow: <?= (int)($readinessSummary['yellow'] ?? 0) ?></span>
+    <span class="badge text-bg-danger">Red: <?= (int)($readinessSummary['red'] ?? 0) ?></span>
+</div>
 
 <?php if (empty($productList)): ?>
     <div class="alert alert-warning" role="alert">
@@ -113,6 +119,30 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
         <?php
         $existingRecordIdentifier = "oai:$activeRepoId:" . $product['id'];
         $alreadyImported = in_array($existingRecordIdentifier, $existingIdentifiers, true);
+        $preflight = $preflightByProductId[$product['id']] ?? ['errors' => [], 'warnings' => []];
+        $preflightErrors = $preflight['errors'] ?? [];
+        $preflightWarnings = $preflight['warnings'] ?? [];
+        $preflightStatus = $preflight['status'] ?? 'yellow';
+        $hasPreflightErrors = $preflightStatus === 'red';
+        $hasPreflightWarnings = $preflightStatus === 'yellow';
+        $preflightStatusClass = $hasPreflightErrors ? 'danger' : ($hasPreflightWarnings ? 'warning' : 'success');
+        $preflightStatusLabel = $hasPreflightErrors
+            ? 'Preflight: Red'
+            : ($hasPreflightWarnings ? 'Preflight: Yellow' : 'Preflight: Green');
+        $summary = $preflight['summary'] ?? ['must_total' => 0, 'must_failed' => 0, 'should_total' => 0, 'should_failed' => 0];
+        $preflightTooltipParts = [];
+        $preflightTooltipParts[] = 'Must failed: ' . (int)$summary['must_failed'] . '/' . (int)$summary['must_total'];
+        $preflightTooltipParts[] = 'Should failed: ' . (int)$summary['should_failed'] . '/' . (int)$summary['should_total'];
+        foreach ($preflightErrors as $msg) {
+            $preflightTooltipParts[] = 'Error: ' . $msg;
+        }
+        foreach ($preflightWarnings as $msg) {
+            $preflightTooltipParts[] = 'Warning: ' . $msg;
+        }
+        if ($preflightTooltipParts === []) {
+            $preflightTooltipParts[] = 'No preflight issues detected.';
+        }
+        $preflightTooltip = implode("\n", $preflightTooltipParts);
         ?>
 
         <div class="card mb-4 position-relative" data-product-id-container="<?= $product['id'] ?>">
@@ -139,6 +169,25 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                 </div>
                 <div class="col-md-10">
                     <div class="card-body">
+                        <div class="mb-2">
+                            <span
+                                class="badge text-bg-<?= $preflightStatusClass ?>"
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                data-bs-html="false"
+                                title="<?= htmlspecialchars($preflightTooltip) ?>"
+                            ><?= htmlspecialchars($preflightStatusLabel) ?></span>
+                            <?= LinkHelper::renderLink(
+                                'Import',
+                                'dnbReadinessReport',
+                                ['id' => $product['id']],
+                                'Readiness JSON',
+                                [
+                                    'class' => 'btn btn-outline-info btn-sm ms-2',
+                                    'target' => '_blank'
+                                ]
+                            ) ?>
+                        </div>
 
                         <?php if (!$alreadyImported): ?>
                             <?php
@@ -152,10 +201,16 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                 ],
                                 'Approve',
                                 [
-                                    'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button',
+                                    'class' => 'btn btn-sm btn-primary position-absolute top-0 end-0 m-3 import-button' . ($hasPreflightErrors ? ' disabled' : ''),
                                     //'onclick' => 'return confirm("Are you sure you want to import this record?")',
                                     'data-product-id' => $product['id'],
                                     'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
+                                    'aria-disabled' => $hasPreflightErrors ? 'true' : 'false',
+                                    'data-preflight-blocked' => $hasPreflightErrors ? '1' : '0',
+                                    'data-bs-toggle' => 'tooltip',
+                                    'title' => $hasPreflightErrors
+                                        ? 'Import blocked: resolve preflight errors first.'
+                                        : 'Import this record'
                                 ]);
                             ?>
                         <?php else:
@@ -169,15 +224,21 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                         'id' => $product['id'],
                                         'repo' => $activeRepoId,
                                         'metadataPrefix' => $activeMetadataPrefix
-                                    ],
-                                    'Re-Import',
-                                    [
-                                        'class' => 'btn btn-sm btn-secondary import-button',
-                                        //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
-                                        'data-product-id' => $product['id'],
-                                        'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix
+                                        ],
+                                        'Re-Import',
+                                        [
+                                            'class' => 'btn btn-sm btn-secondary import-button' . ($hasPreflightErrors ? ' disabled' : ''),
+                                            //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
+                                            'data-product-id' => $product['id'],
+                                            'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
+                                            'aria-disabled' => $hasPreflightErrors ? 'true' : 'false',
+                                            'data-preflight-blocked' => $hasPreflightErrors ? '1' : '0',
+                                            'data-bs-toggle' => 'tooltip',
+                                            'title' => $hasPreflightErrors
+                                                ? 'Re-import blocked: resolve preflight errors first.'
+                                                : 'Re-import this record'
 
-                                    ]);
+                                        ]);
                                 ?>
                                 <?php
                                 echo LinkHelper::renderLink(
@@ -268,5 +329,3 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
         </p>
     </nav>
 <?php endif; ?>
-
-
