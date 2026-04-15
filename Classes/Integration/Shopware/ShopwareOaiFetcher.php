@@ -148,6 +148,7 @@ class ShopwareOaiFetcher
             'categoryNames' => $categoryNames,
             'customFields' => $product['customFields'] ?? [],
             'properties' => $product['properties'] ?? [],
+            'pdfDownload' => $this->extractPdfDownload($product),
 
         ];
 
@@ -286,6 +287,11 @@ class ShopwareOaiFetcher
                             ]
                         ],
                         'manufacturer' => [],
+                        'downloads' => [
+                            'associations' => [
+                                'media' => []
+                            ]
+                        ],
                         'categories' => [
 
                         ],
@@ -366,6 +372,55 @@ class ShopwareOaiFetcher
         }
 
         return array_values(array_unique($names));
+    }
+
+
+    /**
+     * Extract the first PDF download media from Shopware product downloads.
+     *
+     * @param array $product
+     * @return array{id:string,mediaId:string,fileName:string,mimeType:string,fileExtension:string,fileSize:int,url:string}|null
+     */
+    private function extractPdfDownload(array $product): ?array
+    {
+        $downloads = $product['downloads'] ?? null;
+        if (!is_array($downloads)) {
+            return null;
+        }
+
+        $items = $downloads;
+        if (array_key_exists('data', $downloads) && is_array($downloads['data'])) {
+            $items = $downloads['data'];
+        }
+
+        foreach ($items as $download) {
+            if (!is_array($download)) {
+                continue;
+            }
+
+            $media = $download['media'] ?? null;
+            if (!is_array($media)) {
+                continue;
+            }
+
+            $mimeType = strtolower(trim((string)($media['mimeType'] ?? '')));
+            $extension = strtolower(trim((string)($media['fileExtension'] ?? '')));
+            if ($mimeType !== 'application/pdf' && $extension !== 'pdf') {
+                continue;
+            }
+
+            return [
+                'id' => (string)($download['id'] ?? ''),
+                'mediaId' => (string)($media['id'] ?? $download['mediaId'] ?? ''),
+                'fileName' => (string)($media['fileName'] ?? ''),
+                'mimeType' => (string)($media['mimeType'] ?? ''),
+                'fileExtension' => (string)($media['fileExtension'] ?? ''),
+                'fileSize' => (int)($media['fileSize'] ?? 0),
+                'url' => (string)($media['url'] ?? ''),
+            ];
+        }
+
+        return null;
     }
 
 

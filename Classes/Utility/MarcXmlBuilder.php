@@ -56,7 +56,6 @@ class MarcXmlBuilder
 
         // Core control/leader
         $this->addLeader($f);
-        $this->addControl001($f);
         $this->addControl007();
         $this->addControl008($f);
 
@@ -65,8 +64,11 @@ class MarcXmlBuilder
             $this->addCreators100And700($f);
         }
         $this->addTitle245($f);
-        $this->addPublisherAndPlaceAndYear264($f);
+        if (!$this->isMagazineIssueType($f)) {
+            $this->addPublisherAndPlaceAndYear264($f);
+        }
         $this->addIsbnIssnAndProductNumber($f);
+        $this->addPhysicalDescription300($f);
         $this->addAccess093($f);
         $this->addLicense506($f);
         $this->addAbstract520($f);
@@ -155,24 +157,6 @@ class MarcXmlBuilder
     }
 
 
-    /**
-     * @param array $f
-     * @return void
-     * @throws \DOMException
-     */
-    protected function addControl001(array $f): void
-    {
-        $id = ($f['identifier'] ?? '') ?: ($f['url'] ?? '');
-        if ($id === '') {
-            return;
-        }
-
-        $cf001 = $this->doc->createElement('controlfield', $id);
-        $cf001->setAttribute('tag', '001');
-        $this->record->appendChild($cf001);
-    }
-
-
     // ---------------------------------------------------------------------
     // 245 Title
     // ---------------------------------------------------------------------
@@ -244,6 +228,77 @@ class MarcXmlBuilder
         }
 
         return 0;
+    }
+
+
+    // ---------------------------------------------------------------------
+    // 300 Physical description / extent
+    // ---------------------------------------------------------------------
+
+    /**
+     * @param array $f
+     * @return void
+     * @throws \DOMException
+     */
+    protected function addPhysicalDescription300(array $f): void
+    {
+        $extent = $this->resolvePhysicalDescriptionExtent($f);
+        if ($extent === '') {
+            return;
+        }
+
+        $df300 = $this->doc->createElement('datafield');
+        $df300->setAttribute('tag', '300');
+        $df300->setAttribute('ind1', ' ');
+        $df300->setAttribute('ind2', ' ');
+
+        $sfA = $this->doc->createElement('subfield', $extent);
+        $sfA->setAttribute('code', 'a');
+        $df300->appendChild($sfA);
+
+        $this->record->appendChild($df300);
+    }
+
+
+    /**
+     * @param array $f
+     * @return string
+     */
+    private function resolvePhysicalDescriptionExtent(array $f): string
+    {
+        $customFields = $f['customFields'] ?? [];
+
+        $pages = trim((string)($customFields['custom_product_oai_pages'] ?? ''));
+        if ($pages !== '') {
+            return preg_match('/^\d+$/', $pages) ? $pages . ' Seiten' : $this->sanitizeText($pages);
+        }
+
+        $fileSize = (int)($f['pdfDownload']['fileSize'] ?? 0);
+        if ($fileSize <= 0) {
+            return '';
+        }
+
+        return '1 Online-Ressource (' . $this->formatFileSize($fileSize) . ')';
+    }
+
+
+    /**
+     * @param int $bytes
+     * @return string
+     */
+    private function formatFileSize(int $bytes): string
+    {
+        if ($bytes >= 1000000) {
+            $value = round($bytes / 1000000, 1);
+            return str_replace('.', ',', (string)$value) . ' MB';
+        }
+
+        if ($bytes >= 1000) {
+            $value = round($bytes / 1000, 1);
+            return str_replace('.', ',', (string)$value) . ' KB';
+        }
+
+        return $bytes . ' Bytes';
     }
 
 
@@ -386,9 +441,6 @@ class MarcXmlBuilder
             $sfA = $this->doc->createElement('subfield', $productNumber);
             $sfA->setAttribute('code', 'a');
             $df024->appendChild($sfA);
-            $sf2 = $this->doc->createElement('subfield', 'shopware');
-            $sf2->setAttribute('code', '2');
-            $df024->appendChild($sf2);
             $this->record->appendChild($df024);
         }
     }
@@ -487,7 +539,7 @@ class MarcXmlBuilder
      */
     protected function addLicense506(array $f): void
     {
-        $license = trim((string)($f['customFields']['custom_product_oai_license'] ?? ''));
+        $license = trim((string)($f['customFields']['custom_product_oai_license'] ?? 'open-access'));
         if ($license === '') {
             return;
         }
@@ -571,6 +623,21 @@ class MarcXmlBuilder
         $sfU = $this->doc->createElement('subfield', $url);
         $sfU->setAttribute('code', 'u');
         $df856->appendChild($sfU);
+
+        $fileExtension = strtolower(trim((string)($f['pdfDownload']['fileExtension'] ?? '')));
+        $mimeType = strtolower(trim((string)($f['pdfDownload']['mimeType'] ?? '')));
+        if ($fileExtension === 'pdf' || $mimeType === 'application/pdf') {
+            $sfQ = $this->doc->createElement('subfield', 'pdf');
+            $sfQ->setAttribute('code', 'q');
+            $df856->appendChild($sfQ);
+        }
+
+        $fileSize = (int)($f['pdfDownload']['fileSize'] ?? 0);
+        if ($fileSize > 0) {
+            $sfS = $this->doc->createElement('subfield', $fileSize . ' bytes');
+            $sfS->setAttribute('code', 's');
+            $df856->appendChild($sfS);
+        }
 
         $sfX = $this->doc->createElement('subfield', 'Transfer-URL');
         $sfX->setAttribute('code', 'x');
