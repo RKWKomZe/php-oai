@@ -2,6 +2,7 @@
 use RKW\OaiConnector\Utility\FlashMessageService;
 use RKW\OaiConnector\Utility\LinkHelper;
 use RKW\OaiConnector\Utility\LocalTestStuff;
+use RKW\OaiConnector\Utility\ShopwareData;
 use Symfony\Component\VarDumper\VarDumper;
 
 $config = ConfigLoader::load();
@@ -30,8 +31,11 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
         <p class="mb-1">
             The selected repository is required and allows the system to indicate whether a given product has already been imported into it.
         </p>
-        <p class="mb-0">
+        <p class="mb-3">
             To import products into the OAI system, use the action buttons shown next to each record.
+        </p>
+        <p class="mb-0">
+            <strong>Hint:</strong> Only records that are updated again in Shopware after the import can be imported repeatedly. The decisive factors are the ‘updated’ from the OAI database and the ‘updatedAt’ field from Shopware. If an update of an already imported record is possible, a corresponding button is displayed in the corresponding box.
         </p>
     </div>
 </div>
@@ -118,6 +122,8 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
 
         <?php
         $existingRecordIdentifier = "oai:$activeRepoId:" . $product['id'];
+        //$alreadyImported = in_array($existingRecordIdentifier, $existingIdentifierPool, true);
+        $alreadyImported = array_key_exists($existingRecordIdentifier, $existingIdentifierPool);
         $alreadyImported = in_array($existingRecordIdentifier, $existingIdentifiers, true);
         $preflight = $preflightByProductId[$product['id']] ?? ['errors' => [], 'warnings' => []];
         $preflightErrors = $preflight['errors'] ?? [];
@@ -149,7 +155,7 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
             <?php if ($alreadyImported): ?>
                 <!-- Overlay for already imported products -->
                 <div class="imported-overlay">
-                    <i class="bi bi-check-circle-fill check-icon" title="Bereits importiert"></i>
+                    <i class="bi bi-check-circle-fill check-icon" title="Already imported"></i>
                 </div>
             <?php endif; ?>
 
@@ -158,11 +164,11 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                     <?php if (!empty($product['cover']['media']['url'])): ?>
                         <?php /* if (!empty($config['environment'] === 'development')): ?>
                             <!-- for testing purpose: The api-URL is a container URL. We need the real ddev URL -->
-                            <img src="<?= htmlspecialchars(LocalTestStuff::fixShopwareMediaUrl($product['cover']['media']['url'])) ?>" class="img-fluid rounded-start" alt="Produktbild">
+                            <img src="<?= htmlspecialchars(LocalTestStuff::fixShopwareMediaUrl($product['cover']['media']['url'])) ?>" class="img-fluid rounded-start" alt="Product image">
                         <?php else: ?>
-                            <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
+                            <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Product image">
                         <?php endif; */ ?>
-                        <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Produktbild">
+                        <img src="<?= htmlspecialchars($product['cover']['media']['url']) ?>" class="img-fluid rounded-start" alt="Product image">
                     <?php else: ?>
                         <div class="text-muted mt-4">No image</div>
                     <?php endif; ?>
@@ -216,7 +222,21 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                         <?php else:
                             ?>
                             <div class="position-absolute top-0 end-0 m-3 d-flex gap-2">
+                                <!-- compare datestamp of database record with sql "updated"-date.field of shopware record -->
                                 <?php
+                                $needsReimport = false;
+                                if (isset($existingIdentifierPool[$existingRecordIdentifier], $product['updatedAt'])) {
+                                    $needsReimport = ShopwareData::compareOaiWithShopwareDate(
+                                        $existingIdentifierPool[$existingRecordIdentifier],
+                                        $product['updatedAt']
+                                    ) === 1;
+                                }
+
+                                $reimportDisabled = $hasPreflightErrors || !$needsReimport;
+                                $reimportTitle = $hasPreflightErrors
+                                    ? 'Re-import blocked: resolve preflight errors first.'
+                                    : ($needsReimport ? 'Re-import this record' : 'No changes since last import.');
+
                                 echo LinkHelper::renderLink(
                                     'import',
                                     'importOne',
@@ -224,21 +244,18 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                         'id' => $product['id'],
                                         'repo' => $activeRepoId,
                                         'metadataPrefix' => $activeMetadataPrefix
-                                        ],
-                                        'Re-Import',
-                                        [
-                                            'class' => 'btn btn-sm btn-secondary import-button' . ($hasPreflightErrors ? ' disabled' : ''),
-                                            //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
-                                            'data-product-id' => $product['id'],
-                                            'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
-                                            'aria-disabled' => $hasPreflightErrors ? 'true' : 'false',
-                                            'data-preflight-blocked' => $hasPreflightErrors ? '1' : '0',
-                                            'data-bs-toggle' => 'tooltip',
-                                            'title' => $hasPreflightErrors
-                                                ? 'Re-import blocked: resolve preflight errors first.'
-                                                : 'Re-import this record'
-
-                                        ]);
+                                    ],
+                                    'Re-Import',
+                                    [
+                                        'class' => 'btn btn-sm btn-secondary import-button' . ($reimportDisabled ? ' disabled' : ''),
+                                        //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
+                                        'data-product-id' => $product['id'],
+                                        'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
+                                        'aria-disabled' => $reimportDisabled ? 'true' : 'false',
+                                        'data-preflight-blocked' => $reimportDisabled ? '1' : '0',
+                                        'data-bs-toggle' => 'tooltip',
+                                        'title' => $reimportTitle
+                                    ]);
                                 ?>
                                 <?php
                                 echo LinkHelper::renderLink(
@@ -262,7 +279,11 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                         <h5 class="card-title"><?= htmlspecialchars((string)$product['name']) ?></h5>
                         <p class="card-text mb-1"><strong>Artikelnummer:</strong> <?= htmlspecialchars($product['productNumber']) ?></p>
                         <p class="card-text mb-1"><strong>Hersteller:</strong> <?= htmlspecialchars($product['manufacturer']['name'] ?? '-') ?></p>
-                        <p class="card-text mb-1"><strong>Beschreibung:</strong> <?= htmlspecialchars($product['description'] ?? '-') ?></p>
+                        <?php
+                        $rawDescription = (string)($product['description'] ?? '');
+                        $plainDescription = trim(strip_tags($rawDescription));
+                        ?>
+                        <p class="card-text mb-1"><strong>Beschreibung:</strong> <?= htmlspecialchars($plainDescription !== '' ? $plainDescription : '-') ?></p>
                         <p class="card-text mb-1"><strong>Erstellt am:</strong> <?= htmlspecialchars($product['createdAt']) ?></p>
                         <p class="card-text mb-1"><strong>Aktiv:</strong> <?= $product['active'] ? 'Ja' : 'Nein' ?></p>
                         <p class="card-text mb-1"><strong>Lagerbestand:</strong> <?= htmlspecialchars($product['stock']) ?></p>

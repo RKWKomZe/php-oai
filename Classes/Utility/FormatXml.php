@@ -10,7 +10,10 @@ use DOMDocument;
  */
 class FormatXml
 {
-
+    /**
+     * @param string $xml
+     * @return string
+     */
     public static function formatXmlForDisplay(string $xml): string
     {
         // Strip BOM and trim

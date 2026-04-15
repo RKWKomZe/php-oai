@@ -88,7 +88,7 @@
         placeholder="Paste your XML here"
         rows="5"
         required
-    ><?= htmlspecialchars($oaiRepoDescription->getDescription()) ?></textarea>
+    ><?= htmlspecialchars($oaiRepoDescription?->getDescription() ?? '') ?></textarea>
 </div>
 
 <div class="form-group">

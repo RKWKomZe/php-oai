@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace RKW\OaiConnector\Utility;
 
-use Symfony\Component\VarDumper\VarDumper;
 
 class MarcXmlBuilder
 {
@@ -57,17 +56,19 @@ class MarcXmlBuilder
 
         // Core control/leader
         $this->addLeader($f);
-        $this->addControl001($f);
         $this->addControl007();
         $this->addControl008($f);
 
         // Descriptive fields
         if (!$this->isMagazineIssueType($f)) {
-            $this->addCreatorsFromProperties($f);
+            $this->addCreators100And700($f);
         }
         $this->addTitle245($f);
-        $this->addPublisherAndPlaceAndYear264($f);
+        if (!$this->isMagazineIssueType($f)) {
+            $this->addPublisherAndPlaceAndYear264($f);
+        }
         $this->addIsbnIssnAndProductNumber($f);
+        $this->addPhysicalDescription300($f);
         $this->addAccess093($f);
         $this->addLicense506($f);
         $this->addAbstract520($f);
@@ -78,7 +79,7 @@ class MarcXmlBuilder
         $this->addIssueEnumeration773($f);
         $this->addIssueLink773($f);
         $this->addBundleRelations($f);
-        $this->addKeywords653($f);
+        $this->addCategories690($f);
 
         return $this->doc->saveXML($this->record);
     }
@@ -156,24 +157,6 @@ class MarcXmlBuilder
     }
 
 
-    /**
-     * @param array $f
-     * @return void
-     * @throws \DOMException
-     */
-    protected function addControl001(array $f): void
-    {
-        $id = ($f['identifier'] ?? '') ?: ($f['url'] ?? '');
-        if ($id === '') {
-            return;
-        }
-
-        $cf001 = $this->doc->createElement('controlfield', $id);
-        $cf001->setAttribute('tag', '001');
-        $this->record->appendChild($cf001);
-    }
-
-
     // ---------------------------------------------------------------------
     // 245 Title
     // ---------------------------------------------------------------------
@@ -201,17 +184,19 @@ class MarcXmlBuilder
         $df245->setAttribute('ind1', $ind1);
         $df245->setAttribute('ind2', $ind2);
 
+        // Clean up trailing ISBD-style punctuation from main title
+        // (slash, colon, semicolon, spaces)
         $aText = rtrim($title, " /:;");
-        if ($subtitle !== '') {
-            $aText .= ' :';
-        }
 
         $sfA = $this->doc->createElement('subfield', $aText);
         $sfA->setAttribute('code', 'a');
         $df245->appendChild($sfA);
 
         if ($subtitle !== '') {
-            $sfB = $this->doc->createElement('subfield', $subtitle);
+            // Avoid leading/trailing punctuation artifacts in subtitle
+            $bText = trim($subtitle, " /:;");
+
+            $sfB = $this->doc->createElement('subfield', $bText);
             $sfB->setAttribute('code', 'b');
             $df245->appendChild($sfB);
         }
@@ -247,6 +232,77 @@ class MarcXmlBuilder
 
 
     // ---------------------------------------------------------------------
+    // 300 Physical description / extent
+    // ---------------------------------------------------------------------
+
+    /**
+     * @param array $f
+     * @return void
+     * @throws \DOMException
+     */
+    protected function addPhysicalDescription300(array $f): void
+    {
+        $extent = $this->resolvePhysicalDescriptionExtent($f);
+        if ($extent === '') {
+            return;
+        }
+
+        $df300 = $this->doc->createElement('datafield');
+        $df300->setAttribute('tag', '300');
+        $df300->setAttribute('ind1', ' ');
+        $df300->setAttribute('ind2', ' ');
+
+        $sfA = $this->doc->createElement('subfield', $extent);
+        $sfA->setAttribute('code', 'a');
+        $df300->appendChild($sfA);
+
+        $this->record->appendChild($df300);
+    }
+
+
+    /**
+     * @param array $f
+     * @return string
+     */
+    private function resolvePhysicalDescriptionExtent(array $f): string
+    {
+        $customFields = $f['customFields'] ?? [];
+
+        $pages = trim((string)($customFields['custom_product_oai_pages'] ?? ''));
+        if ($pages !== '') {
+            return preg_match('/^\d+$/', $pages) ? $pages . ' Seiten' : $this->sanitizeText($pages);
+        }
+
+        $fileSize = (int)($f['pdfDownload']['fileSize'] ?? 0);
+        if ($fileSize <= 0) {
+            return '';
+        }
+
+        return '1 Online-Ressource (' . $this->formatFileSize($fileSize) . ')';
+    }
+
+
+    /**
+     * @param int $bytes
+     * @return string
+     */
+    private function formatFileSize(int $bytes): string
+    {
+        if ($bytes >= 1000000) {
+            $value = round($bytes / 1000000, 1);
+            return str_replace('.', ',', (string)$value) . ' MB';
+        }
+
+        if ($bytes >= 1000) {
+            $value = round($bytes / 1000, 1);
+            return str_replace('.', ',', (string)$value) . ' KB';
+        }
+
+        return $bytes . ' Bytes';
+    }
+
+
+    // ---------------------------------------------------------------------
     // 100/700: Creators (authors) from Shopware properties
     // ---------------------------------------------------------------------
 
@@ -257,7 +313,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addCreatorsFromProperties(array $f): void
+    protected function addCreators100And700(array $f): void
     {
         $properties = $f['properties'] ?? null;
 
@@ -298,9 +354,15 @@ class MarcXmlBuilder
         $df100->setAttribute('ind1', '1');
         $df100->setAttribute('ind2', ' ');
 
+        // 100 $a – personal name
         $sfA = $this->doc->createElement('subfield', $authors[0]);
         $sfA->setAttribute('code', 'a');
         $df100->appendChild($sfA);
+
+        // 100 $4 – relator code ("aut" = author)
+        $sf4 = $this->doc->createElement('subfield', 'aut');
+        $sf4->setAttribute('code', '4');
+        $df100->appendChild($sf4);
 
         $this->record->appendChild($df100);
 
@@ -317,9 +379,15 @@ class MarcXmlBuilder
                 $df700->setAttribute('ind1', '1');
                 $df700->setAttribute('ind2', ' ');
 
+                // 700 $a – personal name
                 $sfA = $this->doc->createElement('subfield', $authorName);
                 $sfA->setAttribute('code', 'a');
                 $df700->appendChild($sfA);
+
+                // 700 $4 – relator code ("aut" = author)
+                $sf4 = $this->doc->createElement('subfield', 'aut');
+                $sf4->setAttribute('code', '4');
+                $df700->appendChild($sf4);
 
                 $this->record->appendChild($df700);
             }
@@ -373,9 +441,6 @@ class MarcXmlBuilder
             $sfA = $this->doc->createElement('subfield', $productNumber);
             $sfA->setAttribute('code', 'a');
             $df024->appendChild($sfA);
-            $sf2 = $this->doc->createElement('subfield', 'shopware');
-            $sf2->setAttribute('code', '2');
-            $df024->appendChild($sf2);
             $this->record->appendChild($df024);
         }
     }
@@ -474,7 +539,7 @@ class MarcXmlBuilder
      */
     protected function addLicense506(array $f): void
     {
-        $license = trim((string)($f['customFields']['custom_product_oai_license'] ?? ''));
+        $license = trim((string)($f['customFields']['custom_product_oai_license'] ?? 'open-access'));
         if ($license === '') {
             return;
         }
@@ -511,12 +576,20 @@ class MarcXmlBuilder
             return;
         }
 
+        // --- Clean description ---
+        // Remove HTML tags and trim the result
+        // (MARCXML requires plain text; HTML would break validation)
+        $cleanDescription = trim(strip_tags($description));
+
+        // Escape for XML safety
+        $cleanDescription = htmlspecialchars($cleanDescription);
+
         $df520 = $this->doc->createElement('datafield');
         $df520->setAttribute('tag', '520');
         $df520->setAttribute('ind1', ' ');
         $df520->setAttribute('ind2', ' ');
 
-        $sfA = $this->doc->createElement('subfield', $description);
+        $sfA = $this->doc->createElement('subfield', $cleanDescription);
         $sfA->setAttribute('code', 'a');
         $df520->appendChild($sfA);
 
@@ -546,9 +619,25 @@ class MarcXmlBuilder
         $df856->setAttribute('ind1', '4');
         $df856->setAttribute('ind2', '0');
 
+        // 856 $u – URL
         $sfU = $this->doc->createElement('subfield', $url);
         $sfU->setAttribute('code', 'u');
         $df856->appendChild($sfU);
+
+        $fileExtension = strtolower(trim((string)($f['pdfDownload']['fileExtension'] ?? '')));
+        $mimeType = strtolower(trim((string)($f['pdfDownload']['mimeType'] ?? '')));
+        if ($fileExtension === 'pdf' || $mimeType === 'application/pdf') {
+            $sfQ = $this->doc->createElement('subfield', 'pdf');
+            $sfQ->setAttribute('code', 'q');
+            $df856->appendChild($sfQ);
+        }
+
+        $fileSize = (int)($f['pdfDownload']['fileSize'] ?? 0);
+        if ($fileSize > 0) {
+            $sfS = $this->doc->createElement('subfield', $fileSize . ' bytes');
+            $sfS->setAttribute('code', 's');
+            $df856->appendChild($sfS);
+        }
 
         $sfX = $this->doc->createElement('subfield', 'Transfer-URL');
         $sfX->setAttribute('code', 'x');
@@ -564,7 +653,6 @@ class MarcXmlBuilder
      */
     private function buildElectronicLocationUrl(array $f): string
     {
-
         $base = $this->downloadBaseUrl ?? '';
         $base = rtrim((string)$base, '/');
 
@@ -572,28 +660,26 @@ class MarcXmlBuilder
             return '';
         }
 
-        $customFields = $f['customFields'] ?? [];
+
+        // @toDo: URL erstell Logik zu ShopwareData-Utility-Klass auslagern?
+
+
+        $customFields  = $f['customFields'] ?? [];
         $direct = trim((string)($customFields['custom_product_oai_transfer_url'] ?? ''));
         if ($direct !== '') {
             return $direct;
         }
 
         $identifier = trim((string)($f['identifier'] ?? ''));
-
-        $name          = trim($f['title'] ?? '');
-        $productNumber = trim($f['productNumber'] ?? '');
         $resourceType  = trim($customFields['custom_product_oai_resource_type'] ?? '');
 
-        if ($resourceType === '') {
+        if ($resourceType === '' || $identifier === '') {
             return '';
         }
 
         switch ($resourceType) {
             case 'am':
             case 'ab':
-                if ($identifier === '') {
-                    return '';
-                }
                 $path = '/oai/shop/download/' . rawurlencode($identifier);
                 break;
             default:
@@ -801,7 +887,7 @@ class MarcXmlBuilder
      * @return void
      * @throws \DOMException
      */
-    protected function addKeywords653(array $f): void
+    protected function addCategories690(array $f): void
     {
         $rawKeywords = $f['categoryNames'] ?? null;
         if (!is_array($rawKeywords) || $rawKeywords === []) {

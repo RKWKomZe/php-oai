@@ -3,7 +3,6 @@
 namespace RKW\OaiConnector\Service;
 
 use RKW\OaiConnector\Utility\ConfigLoader;
-use Symfony\Component\VarDumper\VarDumper;
 
 
 /**

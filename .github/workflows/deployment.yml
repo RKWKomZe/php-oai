@@ -101,6 +101,7 @@ jobs:
             APP_ENV=${{ vars.APP_ENV }}
             APP_DEBUG=${{ vars.APP_DEBUG }}
             APP_URL=${{ vars.APP_URL }}
+            DEFAULT_REPO=${{ vars.DEFAULT_REPO }}
             DB_HOST=${{ vars.DB_HOST }}
             DB_NAME=${{ vars.DB_NAME }}
             DB_USER=${{ vars.DB_USER }}

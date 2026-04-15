@@ -15,6 +15,7 @@ use RKW\OaiConnector\Utility\DbConnection;
 use RKW\OaiConnector\Utility\FlashMessage;
 use RKW\OaiConnector\Utility\MarcXmlPreflightValidator;
 use RKW\OaiConnector\Utility\Redirect;
+use RKW\OaiConnector\Utility\ShopwareData;
 
 /**
  * ImportController
@@ -179,12 +180,20 @@ class ImportController extends AbstractController
         });
         */
 
+        // for usability: Compare selected Shopware records with already imported database items
+        //    $existingIdentifiers = $this->oaiItemMetaRepository->findByIdList($activeRepoId, $prefixedIds);
+        $identifierList = ShopwareData::buildOaiIdentifiersFromItems($dataRequest['data'], $activeRepoId);
+        $metaRows = $this->oaiItemMetaRepository->findBy([$identifierList]);
+        $existingIdentifierPool = ShopwareData::buildSourceIdPoolFromMetaRows($metaRows);
+
         $this->render('list', [
             //'unimportedProducts' => $unimportedProducts,
             'productList' => $dataRequest['data'],
             'existingIdentifiers' => $existingIdentifiers,
             'preflightByProductId' => $preflightByProductId,
             'readinessSummary' => $readinessSummary,
+        //    'existingIdentifiers' => $existingIdentifiers,
+            'existingIdentifierPool' => $existingIdentifierPool,
             'repoList' => $repoList,
             'metadataPrefixListSorted' => $metadataPrefixListSorted,
             'activeRepoId' => $activeRepoId,
@@ -346,6 +355,10 @@ class ImportController extends AbstractController
         $fetcher = new ShopwareOaiFetcher();
         $records = $fetcher->fetchSingleById($identifier);
 
+
+        // @toDo: Add validation for alle Felder mit (O) oder (O/F) aus Steffen dokument
+
+
         // 2. Passed to OAI Updater
         $updater = new ShopwareOaiUpdater(
             $dbConfig['host'],
@@ -416,7 +429,7 @@ class ImportController extends AbstractController
         }
 
         /* @todo: Maybe provide a translation file to collect messages there */
-        FlashMessage::add("Produkt erfolgreich importiert.", FlashMessage::TYPE_SUCCESS);
+        FlashMessage::add("Product successfully imported.", FlashMessage::TYPE_SUCCESS);
         Redirect::to('list', 'import');
 
     }
