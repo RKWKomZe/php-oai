@@ -85,7 +85,7 @@ jobs:
           ssh-keyscan -H ${{ vars.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create release directory on server
-        run: ssh -o StrictHostKeyChecking=no ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "mkdir -p ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}"
+        run: ssh -o StrictHostKeyChecking=no -o HostKeyAlgorithms=rsa-sha2-512,ssh-rsa -o PubkeyAcceptedAlgorithms=rsa-sha2-512,ssh-rsa ${{ vars.SSH_USER }}@${{ vars.SSH_HOST }} "mkdir -p ${{ vars.DEPLOY_PATH }}/releases/${{ needs.prepare.outputs.release_name }}"
 
       - name: Deploy via rsync
         run: |
