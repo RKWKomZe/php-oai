@@ -118,5 +118,61 @@ class OaiItemMetaRepository extends AbstractRepository
 
     }
 
-}
 
+    /**
+     * Archives the currently active metadata record and related set memberships.
+     *
+     * This keeps the operation close to the upstream library behaviour: active rows
+     * are moved out of the current view by flipping `history` from 0 to 1.
+     *
+     * @param string $repoId
+     * @param string $identifier
+     * @param string $metadataPrefix
+     * @return bool True when an active metadata record was archived, false otherwise.
+     */
+    public function archiveActiveRecord(string $repoId, string $identifier, string $metadataPrefix): bool
+    {
+        $this->pdo->beginTransaction();
+
+        try {
+            $setStmt = $this->pdo->prepare(
+                'UPDATE oai_item_set
+                 SET history = 1
+                 WHERE repo = :repo
+                   AND history = 0
+                   AND identifier = :identifier
+                   AND metadataPrefix = :metadataPrefix'
+            );
+            $setStmt->execute([
+                'repo' => $repoId,
+                'identifier' => $identifier,
+                'metadataPrefix' => $metadataPrefix,
+            ]);
+
+            $metaStmt = $this->pdo->prepare(
+                'UPDATE oai_item_meta
+                 SET history = 1
+                 WHERE repo = :repo
+                   AND history = 0
+                   AND identifier = :identifier
+                   AND metadataPrefix = :metadataPrefix'
+            );
+            $metaStmt->execute([
+                'repo' => $repoId,
+                'identifier' => $identifier,
+                'metadataPrefix' => $metadataPrefix,
+            ]);
+
+            $this->pdo->commit();
+
+            return $metaStmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
+            throw $e;
+        }
+    }
+
+}
