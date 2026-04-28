@@ -125,9 +125,15 @@ $submitButtonLabel = $isForceMode ? 'Run Force Reindex' : 'Run Re-Import';
     <div class="row g-3 mt-2">
         <div class="col-12 col-xl-6">
             <h3 class="h5">Current active metadata XML</h3>
-            <pre class="bg-light p-2 h-100" style="white-space:pre; overflow:auto; max-height: 60vh;"><code class="language-xml"><?=
-                    \RKW\OaiConnector\Utility\FormatXml::formatXmlForDisplay((string)($comparison['currentMetadata'] ?? ''));
-                ?></code></pre>
+            <?php if (trim((string)($comparison['currentMetadata'] ?? '')) === ''): ?>
+                <div class="alert alert-light border mb-0">
+                    No active metadata XML is currently stored for this repo and metadata prefix.
+                </div>
+            <?php else: ?>
+                <pre class="bg-light p-2 h-100" style="white-space:pre; overflow:auto; max-height: 60vh;"><code class="language-xml"><?=
+                        \RKW\OaiConnector\Utility\FormatXml::formatXmlForDisplay((string)($comparison['currentMetadata'] ?? ''));
+                    ?></code></pre>
+            <?php endif; ?>
         </div>
 
         <div class="col-12 col-xl-6">
