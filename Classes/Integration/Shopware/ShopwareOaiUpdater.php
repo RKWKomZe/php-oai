@@ -346,6 +346,13 @@ class ShopwareOaiUpdater extends \Oai_Updater
                 'repo' => $this->repoId
             ]);
 
+        if (!$oaiRepoSet) {
+            $this->logger?->info('No OAI set configured for repo; continuing without sets', [
+                'repo' => $this->repoId,
+            ]);
+            return [];
+        }
+
         return [$oaiRepoSet->getSetSpec()];
 
         // Das set muss vorher existieren. Hier legen wir es einfach mal via "Piratenmethode" an:
