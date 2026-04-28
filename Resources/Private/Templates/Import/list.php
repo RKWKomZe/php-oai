@@ -238,24 +238,40 @@ $queryBase = http_build_query(array_merge($_GET, ['page' => null]));
                                     : ($needsReimport ? 'Re-import this record' : 'No changes since last import.');
 
                                 echo LinkHelper::renderLink(
-                                    'import',
-                                    'importOne',
+                                    'Import',
+                                    'confirmReimport',
                                     [
                                         'id' => $product['id'],
                                         'repo' => $activeRepoId,
-                                        'metadataPrefix' => $activeMetadataPrefix
+                                        'metadataPrefix' => $activeMetadataPrefix,
+                                        'returnTo' => $_SERVER['REQUEST_URI'],
                                     ],
                                     'Re-Import',
                                     [
-                                        'class' => 'btn btn-sm btn-secondary import-button' . ($reimportDisabled ? ' disabled' : ''),
-                                        //'onclick' => 'return confirm("Are you sure you want to re-import this record?")',
+                                        'class' => 'btn btn-sm btn-secondary' . ($reimportDisabled ? ' disabled' : ''),
                                         'data-product-id' => $product['id'],
-                                        'data-import-url' => '/index.php?controller=import&action=importOne&id=' . $product['id'] . '&repo=' . $activeRepoId . '&metadataPrefix=' . $activeMetadataPrefix,
                                         'aria-disabled' => $reimportDisabled ? 'true' : 'false',
                                         'data-preflight-blocked' => $reimportDisabled ? '1' : '0',
                                         'data-bs-toggle' => 'tooltip',
                                         'title' => $reimportTitle
                                     ]);
+                                ?>
+                                <?php
+                                echo LinkHelper::renderLink(
+                                    'Import',
+                                    'confirmForceReindex',
+                                    [
+                                        'id' => $product['id'],
+                                        'repo' => $activeRepoId,
+                                        'metadataPrefix' => $activeMetadataPrefix,
+                                        'returnTo' => $_SERVER['REQUEST_URI']
+                                    ],
+                                    'Force Re-Import',
+                                    [
+                                        'class' => 'btn btn-outline-warning btn-sm',
+                                        'title' => 'Only use this when importer or mapping code has changed.'
+                                    ]
+                                );
                                 ?>
                                 <?php
                                 echo LinkHelper::renderLink(

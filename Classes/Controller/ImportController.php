@@ -333,104 +333,132 @@ class ImportController extends AbstractController
      */
     public function importOne(): void
     {
+        $identifier = $_REQUEST['id'] ?? null;
+        $repoId = $_REQUEST['repo'] ?? null;
+        $metadataPrefix = $_REQUEST['metadataPrefix'] ?? null;
 
-        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH'])
-            && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
-
-        $identifier = $_GET['id'] ?? null;
-        $repoId = $_GET['repo'] ?? null;
-        $metadataPrefix = $_GET['metadataPrefix'] ?? null;
-
-        if (!$identifier || !$repoId) {
-            FlashMessage::add('Missing parameters for record view.', FlashMessage::TYPE_DANGER);
-            Redirect::to('list', 'import');
+        if (!$identifier || !$repoId || !$metadataPrefix) {
+            FlashMessage::add('Missing parameters for import.', FlashMessage::TYPE_DANGER);
+            Redirect::to('list', 'Import');
         }
 
-        $config = ConfigLoader::load();
-
-        $dbConfig = $config['database'];
-        $saveHistory = $config['oai']['save_history'] ?? true;
-
-        // 1. Fetch products via Shopware-API
-        $fetcher = new ShopwareOaiFetcher();
-        $records = $fetcher->fetchSingleById($identifier);
-
-
-        // @toDo: Add validation for alle Felder mit (O) oder (O/F) aus Steffen dokument
+        $this->executeImportForProduct(
+            (string)$identifier,
+            (string)$repoId,
+            (string)$metadataPrefix,
+            false
+        );
+    }
 
 
-        // 2. Passed to OAI Updater
-        $updater = new ShopwareOaiUpdater(
-            $dbConfig['host'],
-            $dbConfig['user'],
-            $dbConfig['password'],
-            $dbConfig['name'],
+    /**
+     * Shows a comparison screen before a regular re-import is executed.
+     *
+     * @return void
+     */
+    public function confirmReimport(): void
+    {
+        $this->renderImportConfirmation(false);
+    }
+
+
+    /**
+     * Shows a confirmation screen before the technical force reindex action is executed.
+     *
+     * @return void
+     */
+    public function confirmForceReindex(): void
+    {
+        $this->renderImportConfirmation(true);
+    }
+
+
+    /**
+     * Renders the shared confirmation screen for regular re-imports and force re-imports.
+     *
+     * @param bool $forceReindex
+     * @return void
+     */
+    protected function renderImportConfirmation(bool $forceReindex): void
+    {
+        $identifier = trim((string)($_GET['id'] ?? ''));
+        $repoId = trim((string)($_GET['repo'] ?? ''));
+        $metadataPrefix = trim((string)($_GET['metadataPrefix'] ?? ''));
+        $returnTo = trim((string)($_GET['returnTo'] ?? ''));
+
+        if ($identifier === '' || $repoId === '' || $metadataPrefix === '') {
+            FlashMessage::add(
+                $forceReindex ? 'Missing parameters for force reindex.' : 'Missing parameters for re-import.',
+                FlashMessage::TYPE_DANGER
+            );
+            Redirect::to('list', 'Import');
+        }
+
+        try {
+            $record = $this->getShopwareFetcher()->fetchSingleById($identifier);
+        } catch (\Throwable $e) {
+            FlashMessage::add(
+                $forceReindex ? 'Product could not be loaded for force reindex.' : 'Product could not be loaded for re-import.',
+                FlashMessage::TYPE_DANGER
+            );
+            Redirect::to('list', 'Import');
+        }
+
+        if (!is_array($record)) {
+            FlashMessage::add(
+                $forceReindex ? 'Product not found for force reindex.' : 'Product not found for re-import.',
+                FlashMessage::TYPE_DANGER
+            );
+            Redirect::to('list', 'Import');
+        }
+
+        $oaiIdentifier = 'oai:' . $repoId . ':' . $identifier;
+        $currentItem = $this->oaiItemMetaRepository->findOneBy([
+            'repo' => $repoId,
+            'identifier' => $oaiIdentifier,
+            'metadataPrefix' => $metadataPrefix,
+        ]);
+
+        $comparison = $this->buildForceReindexComparison(
             $repoId,
-            $saveHistory,
-            [$records]
+            $metadataPrefix,
+            $record,
+            is_array($currentItem) ? $currentItem : null
         );
 
-        // Problem: We can't override the function "run" because of used methods with "private"-declaration
-        // But we want to return error message if something went wrong
-        // Workaround: Check the update-log-table before and after
-        $pdo = DbConnection::get();
-        $lastLogId = (int) $pdo->query('SELECT MAX(id) FROM oai_update_log')->fetchColumn();
+        $this->render('confirmForceReindex', [
+            'mode' => $forceReindex ? 'force' : 'reimport',
+            'product' => $record,
+            'repoId' => $repoId,
+            'metadataPrefix' => $metadataPrefix,
+            'returnTo' => $returnTo,
+            'comparison' => $comparison,
+        ]);
+    }
 
-        $this->logger->info('Start import', ['Identifier' => $identifier]);
 
-        // do the update run
-        $caughtErrorMessage = null;
-        try {
-            $updater->run(['all'], [$metadataPrefix]);
-        } catch (\Throwable $e) {
+    /**
+     * Force reindexes a single product by archiving the active OAI cache row first.
+     *
+     * @return void
+     */
+    public function forceReindexOne(): void
+    {
+        $identifier = $_POST['id'] ?? $_GET['id'] ?? null;
+        $repoId = $_POST['repo'] ?? $_GET['repo'] ?? null;
+        $metadataPrefix = $_POST['metadataPrefix'] ?? $_GET['metadataPrefix'] ?? null;
 
-            // @todo: Please check this safeguard.
-            // @toDo: Fehlermeldung wird von Library selbst schon abefangen, falls etwa SQL-Daten falsch. Dieser catch
-            // ... "catcht" also zumindest teilweise nicht
-            $this->logger->critical('Unexpected error while writing records to database:', [
-                'error' => $e->getMessage(),
-            ]);
-            $caughtErrorMessage = $e->getMessage();
+        if (!$identifier || !$repoId || !$metadataPrefix) {
+            FlashMessage::add('Missing parameters for force reindex.', FlashMessage::TYPE_DANGER);
+            Redirect::to('list', 'Import');
         }
 
-        if ($caughtErrorMessage !== null) {
-            if ($isAjax) {
-                header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'message' => $caughtErrorMessage]);
-                exit;
-            }
-
-            FlashMessage::add($caughtErrorMessage, FlashMessage::TYPE_DANGER);
-            Redirect::to('list', 'import');
-        }
-
-        // check for errors
-        $stmt = $pdo->prepare('
-            SELECT * FROM oai_update_log
-            WHERE id > :lastId
-            ORDER BY id DESC
-            LIMIT 1
-        ');
-        $stmt->execute(['lastId' => $lastLogId]);
-        $logEntry = $stmt->fetch(\PDO::FETCH_ASSOC);
-
-        if ($logEntry && $logEntry['error']) {
-            $errorMessage = $logEntry['errmsg'];
-
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'message' => $errorMessage]);
-            exit;
-        }
-
-        if ($isAjax) {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true]);
-            exit;
-        }
-
-        /* @todo: Maybe provide a translation file to collect messages there */
-        FlashMessage::add("Product successfully imported.", FlashMessage::TYPE_SUCCESS);
-        Redirect::to('list', 'import');
+        $this->executeImportForProduct(
+            (string)$identifier,
+            (string)$repoId,
+            (string)$metadataPrefix,
+            true
+        );
 
     }
 
@@ -500,6 +528,235 @@ class ImportController extends AbstractController
         FlashMessage::add(count($records) . ' Products successfully imported.', FlashMessage::TYPE_SUCCESS);
         Redirect::to('fullImport', 'Tool');
 
+    }
+
+
+    /**
+     * Executes the import for a single Shopware product, optionally forcing a rebuild.
+     *
+     * @param string $identifier
+     * @param string $repoId
+     * @param string $metadataPrefix
+     * @param bool $forceReindex
+     * @return void
+     */
+    protected function executeImportForProduct(
+        string $identifier,
+        string $repoId,
+        string $metadataPrefix,
+        bool $forceReindex
+    ): void {
+        $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH'])
+            && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
+
+        $config = ConfigLoader::load();
+        $dbConfig = $config['database'];
+        $saveHistory = $config['oai']['save_history'] ?? true;
+        $returnTo = $this->sanitizeReturnTo($_REQUEST['returnTo'] ?? '');
+
+        $fetcher = $this->getShopwareFetcher();
+        $record = $fetcher->fetchSingleById($identifier);
+
+        $oaiIdentifier = 'oai:' . $repoId . ':' . $identifier;
+
+        if ($forceReindex) {
+            $archived = $this->oaiItemMetaRepository->archiveActiveRecord($repoId, $oaiIdentifier, $metadataPrefix);
+            if (!$archived) {
+                $this->logger->warning('Force reindex requested without active OAI cache row', [
+                    'Identifier' => $oaiIdentifier,
+                    'metadataPrefix' => $metadataPrefix,
+                ]);
+            }
+        }
+
+        $updater = new ShopwareOaiUpdater(
+            $dbConfig['host'],
+            $dbConfig['user'],
+            $dbConfig['password'],
+            $dbConfig['name'],
+            $repoId,
+            $saveHistory,
+            [$record]
+        );
+
+        $pdo = DbConnection::get();
+        $lastLogId = (int)$pdo->query('SELECT MAX(id) FROM oai_update_log')->fetchColumn();
+
+        $this->logger->info($forceReindex ? 'Start force reindex' : 'Start import', [
+            'Identifier' => $identifier,
+            'Repo' => $repoId,
+            'MetadataPrefix' => $metadataPrefix,
+        ]);
+
+        $caughtErrorMessage = null;
+        try {
+            $updater->run(['all'], [$metadataPrefix]);
+        } catch (\Throwable $e) {
+            $this->logger->critical('Unexpected error while writing records to database:', [
+                'error' => $e->getMessage(),
+            ]);
+            $caughtErrorMessage = $e->getMessage();
+        }
+
+        if ($caughtErrorMessage !== null) {
+            $this->respondToImportFailure($caughtErrorMessage, $isAjax, $returnTo);
+        }
+
+        $stmt = $pdo->prepare('
+            SELECT * FROM oai_update_log
+            WHERE id > :lastId
+            ORDER BY id DESC
+            LIMIT 1
+        ');
+        $stmt->execute(['lastId' => $lastLogId]);
+        $logEntry = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($logEntry && $logEntry['error']) {
+            $this->respondToImportFailure((string)$logEntry['errmsg'], $isAjax, $returnTo);
+        }
+
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        FlashMessage::add(
+            $forceReindex ? 'Product successfully reindexed.' : 'Product successfully imported.',
+            FlashMessage::TYPE_SUCCESS
+        );
+
+        if ($returnTo !== '') {
+            header('Location: ' . $returnTo);
+            exit;
+        }
+
+        Redirect::to('list', 'Import');
+    }
+
+
+    /**
+     * Handles error responses for import and force-reindex operations.
+     *
+     * @param string $message
+     * @param bool $isAjax
+     * @param string $returnTo
+     * @return never
+     */
+    protected function respondToImportFailure(string $message, bool $isAjax, string $returnTo): never
+    {
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => $message]);
+            exit;
+        }
+
+        FlashMessage::add($message, FlashMessage::TYPE_DANGER);
+
+        if ($returnTo !== '') {
+            header('Location: ' . $returnTo);
+            exit;
+        }
+
+        Redirect::to('list', 'Import');
+    }
+
+
+    /**
+     * Restricts return targets to local index.php URLs.
+     *
+     * @param string $returnTo
+     * @return string
+     */
+    protected function sanitizeReturnTo(string $returnTo): string
+    {
+        if ($returnTo === '') {
+            return '';
+        }
+
+        if (str_starts_with($returnTo, '/index.php?')) {
+            return $returnTo;
+        }
+
+        return '';
+    }
+
+
+    /**
+     * Builds a compact comparison between the active OAI cache row and the newly generated import output.
+     *
+     * @param string $repoId
+     * @param string $metadataPrefix
+     * @param array $record
+     * @param array|null $currentItem
+     * @return array<string,mixed>
+     */
+    protected function buildForceReindexComparison(
+        string $repoId,
+        string $metadataPrefix,
+        array $record,
+        ?array $currentItem
+    ): array {
+        $config = ConfigLoader::load();
+        $dbConfig = $config['database'];
+        $saveHistory = $config['oai']['save_history'] ?? true;
+
+        $updater = new ShopwareOaiUpdater(
+            $dbConfig['host'],
+            $dbConfig['user'],
+            $dbConfig['password'],
+            $dbConfig['name'],
+            $repoId,
+            $saveHistory,
+            [$record]
+        );
+
+        $newMetadata = $updater->metadata($record, $metadataPrefix);
+        $newDeleted = (bool)$updater->deleted($record);
+
+        $currentMetadata = (string)($currentItem['metadata'] ?? '');
+        $currentDeleted = isset($currentItem['deleted']) ? (bool)$currentItem['deleted'] : null;
+
+        $metadataChanged = $currentItem === null
+            ? true
+            : trim($currentMetadata) !== trim($newMetadata);
+
+        $deletedChanged = $currentDeleted === null
+            ? true
+            : $currentDeleted !== $newDeleted;
+
+        $changes = [];
+        if ($currentItem === null) {
+            $changes[] = 'No active OAI record exists yet.';
+        } else {
+            if ($metadataChanged) {
+                $changes[] = 'Generated metadata XML would change.';
+            }
+            if ($deletedChanged) {
+                $changes[] = 'Deleted flag would change.';
+            }
+            if (!$metadataChanged && !$deletedChanged) {
+                $changes[] = 'Generated metadata matches the current active OAI record.';
+            }
+        }
+
+        return [
+            'currentExists' => $currentItem !== null,
+            'currentIdentifier' => (string)($currentItem['identifier'] ?? ('oai:' . $repoId . ':' . ($record['identifier'] ?? ''))),
+            'currentDatestamp' => (string)($currentItem['datestamp'] ?? ''),
+            'currentDeleted' => $currentDeleted,
+            'currentMetadata' => $currentMetadata,
+            'currentMetadataHash' => $currentMetadata !== '' ? sha1($currentMetadata) : '',
+            'currentUpdated' => (string)($currentItem['updated'] ?? ''),
+            'newIdentifier' => 'oai:' . $repoId . ':' . ($record['identifier'] ?? ''),
+            'newSourceDatestamp' => (string)($record['datestamp'] ?? ''),
+            'newDeleted' => $newDeleted,
+            'newMetadata' => $newMetadata,
+            'newMetadataHash' => sha1($newMetadata),
+            'metadataChanged' => $metadataChanged,
+            'deletedChanged' => $deletedChanged,
+            'changes' => $changes,
+        ];
     }
 
 }
