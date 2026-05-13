@@ -104,6 +104,18 @@ packages/cbisiere/oai-pmh/install/
 /index.php?controller=endpoint&action=handle&verb=Identify&repo=rkw
 ```
 
+Preferred harvester-safe endpoint base URL:
+
+```text
+/index.php/oai/rkw
+```
+
+Example request with verb appended according to the OAI-PMH pattern:
+
+```text
+/index.php/oai/rkw?verb=Identify
+```
+
 MARCXML list records example:
 
 ```text
@@ -142,4 +154,3 @@ Run a single test file:
 - `.env` is ignored by Git and must be provided per environment.
 - Logs are written to `/logs`.
 - Current deployment workflow installs production dependencies with `--no-dev`; tests are intended for local/CI test jobs.
-
