@@ -6,6 +6,7 @@ use RKW\OaiConnector\Factory\LoggerFactory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+(new \RKW\OaiConnector\Security\OaiRouteBootstrap())->normalize($_GET, $_SERVER);
 (new \RKW\OaiConnector\Security\Gatekeeper())->handle();
 
 
@@ -75,4 +76,3 @@ try {
     <?php
     exit;
 }
-

@@ -40,7 +40,7 @@ echo LinkHelper::renderLink('Repo', 'list', [], '&larr; Back to list', ['class' 
                 <strong>Important:</strong> When creating a new OAI-PMH repository entry, please consider the following:
                 <ul class="mb-0">
                     <li><strong>Repository Identifier:</strong> The combination of <code>repositoryName</code> and <code>baseURL</code> should be globally unique and must not change later.</li>
-                    <li><strong>Base URL:</strong> Ensure that the baseURL points to the OAI-PMH endpoint (e.g. <code>https://rkw-oaipmh.ddev.site/index.php?controller=endpoint&action=handle&verb=Identify&repo=myrepoid</code>). It must be publicly accessible for harvesters.</li>
+                    <li><strong>Base URL:</strong> Use the query-free OAI endpoint (e.g. <code>https://rkw-oaipmh.ddev.site/index.php/oai/myrepoid</code>). Harvesters append verbs like <code>?verb=Identify</code> themselves.</li>
                     <li><strong>Metadata Formats:</strong> Make sure that the repository actually supports the expected metadata formats like <code>oai_dc</code> or <code>marcXml</code>. You can verify this using the <code>?verb=ListMetadataFormats</code> endpoint.</li>
                     <li><strong>Duplicate entries:</strong> Avoid creating repositories for the same endpoint multiple times unless you're managing different configurations intentionally.</li>
                 </ul>
@@ -48,6 +48,5 @@ echo LinkHelper::renderLink('Repo', 'list', [], '&larr; Back to list', ['class' 
         </div>
     </div>
 </div>
-
 
 

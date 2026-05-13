@@ -17,7 +17,7 @@
             class="form-control"
             type="url"
             name="baseURL"
-            placeholder="URL has to start with https and targets the correct endpoint"
+            placeholder="e.g. https://example.org/index.php/oai/rkw"
             required
            value="<?= htmlspecialchars($oaiRepo->getBaseURL()) ?>">
 </div>

@@ -182,7 +182,10 @@ class Oai
          * base URL
          */
 
-        $this->_repo_baseurl = $f['baseURL'];
+        $baseUrlOverride = $_SERVER['OAI_BASE_URL'] ?? null;
+        $this->_repo_baseurl = is_string($baseUrlOverride) && '' !== $baseUrlOverride
+            ? $baseUrlOverride
+            : $f['baseURL'];
 
         /*
          * max lifespan of a token, in seconds (or null if tokens never expire)
