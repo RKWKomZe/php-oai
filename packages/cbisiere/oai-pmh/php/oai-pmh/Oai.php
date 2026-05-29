@@ -762,6 +762,14 @@ class Oai
      */
     private function _createElement($name, $value)
     {
+        if (0 === strpos($name, 'oai:')) {
+            return $this->_response->createElementNS(
+                Oai_Const::NS_OAI,
+                substr($name, 4),
+                htmlspecialchars($value ?? '', ENT_XML1 | ENT_NOQUOTES, 'UTF-8')
+            );
+        }
+
         return $this->_response->createElement($name, htmlspecialchars($value ?? '', ENT_XML1 | ENT_NOQUOTES, 'UTF-8'));
 
     }
@@ -827,12 +835,12 @@ class Oai
      */
     private static function _docRoot()
     {
+        $ns['xmlns'] = Oai_Const::NS_OAI;
         $ns['xmlns:xsd'] = Oai_Const::NS_XSD;
         $ns['xmlns:xsi'] = Oai_Const::NS_XSI;
-        $ns['xmlns:oai'] = Oai_Const::NS_OAI;
         $ns['xsi:schemaLocation'] = Oai_Const::NS_OAI.' '.Oai_Const::XS_OAI;
 
-        return Xml_Utils::emptyElementAsString('oai:OAI-PMH', $ns);
+        return Xml_Utils::emptyElementAsString('OAI-PMH', $ns);
     }
 
     /**
