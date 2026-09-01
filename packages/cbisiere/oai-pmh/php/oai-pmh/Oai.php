@@ -1311,7 +1311,7 @@ class Oai
          *
          * Accordingly, we set the response date just before sending the response
          */
-        $oDate = Oai_Date::now($this->_repo_date_format);
+        $oDate = Oai_Date::now(Oai_Const::FORMAT_DATETIME_TZ);
         $this->_response_date->nodeValue = $oDate->toString();
 
         $responseAsString = $this->_response->saveXML();

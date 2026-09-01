@@ -255,27 +255,9 @@ class ShopwareOaiUpdater extends \Oai_Updater
     }
 
 
-    /**
-     * Generates an 'about' metadata structure with information about the source, product,
-     * and the time of import.
-     *
-     * @param array $f An associative array containing the key 'title', used to derive the product name.
-     * @param string $metadataPrefix Placeholder parameter, purpose is left undefined in the scope of this method.
-     *
-     * @return array Returns an array containing a single string element with the structured metadata in XML-like format.
-     */
     public function about($f, $metadataPrefix): array
     {
-
-        $productName = htmlspecialchars($f['title'] ?? 'unbekannt');
-
-        return [
-            '<about>
-                <source>Shopware</source>
-                <product>' . $productName . '</product>
-                <imported>' . date('c') . '</imported>
-            </about>'
-        ];
+        return [];
 
     }
 
