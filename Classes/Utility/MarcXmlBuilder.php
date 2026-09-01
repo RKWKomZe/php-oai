@@ -58,6 +58,7 @@ class MarcXmlBuilder
         $this->addLeader($f);
         $this->addControl007();
         $this->addControl008($f);
+        $this->addCatalogingSource040();
 
         // Descriptive fields
         if (!$this->isMagazineIssueType($f)) {
@@ -154,6 +155,27 @@ class MarcXmlBuilder
         $cf008 = $this->doc->createElement('controlfield', $value);
         $cf008->setAttribute('tag', '008');
         $this->record->appendChild($cf008);
+    }
+
+
+    /**
+     * MARC 040 carries the source of the metadata for DNB ingestion.
+     *
+     * @return void
+     * @throws \DOMException
+     */
+    protected function addCatalogingSource040(): void
+    {
+        $df040 = $this->doc->createElement('datafield');
+        $df040->setAttribute('tag', '040');
+        $df040->setAttribute('ind1', ' ');
+        $df040->setAttribute('ind2', ' ');
+
+        $sfA = $this->doc->createElement('subfield', 'Shopware');
+        $sfA->setAttribute('code', 'a');
+        $df040->appendChild($sfA);
+
+        $this->record->appendChild($df040);
     }
 
 
