@@ -817,6 +817,64 @@ class Oai
     }
 
     /**
+     * Add a schema-backed extension fragment to an OAI extension container.
+     *
+     * OAI-PMH extension containers such as description, setDescription and about
+     * must contain XML from a namespace outside the OAI-PMH protocol namespace.
+     *
+     * @param DOMElement $node       the parent node
+     * @param string     $xml_string the fragment to attach to the parent node
+     *
+     * @return bool
+     */
+    private function _addExtensionFragment($node, $xml_string)
+    {
+        if (!$this->_isExtensionFragment($xml_string)) {
+            if ($node->parentNode) {
+                $node->parentNode->removeChild($node);
+            }
+
+            return false;
+        }
+
+        $this->_addFragment($node, $xml_string);
+
+        return true;
+    }
+
+    /**
+     * Check whether a fragment is suitable for OAI extension containers.
+     *
+     * @param string $xml_string XML fragment to check
+     *
+     * @return bool
+     */
+    private function _isExtensionFragment($xml_string)
+    {
+        $xml_string = preg_replace("/^\<\?xml[^\?]*\?\>\n*/", '', $xml_string, 1);
+
+        $doc = new DOMDocument('1.0', 'UTF-8');
+
+        $state = libxml_use_internal_errors(true);
+        $success = $doc->loadXML('<wrapper>'.$xml_string.'</wrapper>');
+        libxml_use_internal_errors($state);
+
+        if (!$success) {
+            return false;
+        }
+
+        foreach ($doc->documentElement->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                return is_string($child->namespaceURI)
+                    && '' !== $child->namespaceURI
+                    && Oai_Const::NS_OAI !== $child->namespaceURI;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Add a child 'oai:error' to the response root.
      *
      * @param string $code    OAI error code
@@ -1006,7 +1064,7 @@ class Oai
                 foreach ($r as $f) {
                     if (isset($f['description'])) {
                         $description = $this->_addChild($xverb, 'oai:description');
-                        $this->_addFragment($description, $f['description']);
+                        $this->_addExtensionFragment($description, $f['description']);
                     }
                 }
 
@@ -1055,7 +1113,7 @@ class Oai
                     $rs = $this->_backend->setDescriptionSelect($f['setSpec']);
                     foreach ($rs as $fs) {
                         $description = $this->_addChild($set, 'oai:setDescription');
-                        $this->_addFragment($description, $fs['setDescription']);
+                        $this->_addExtensionFragment($description, $fs['setDescription']);
                     }
                 }
 
@@ -1180,7 +1238,7 @@ class Oai
                         $ra = $this->_backend->aboutSelect($f['identifier'], $metadataPrefix);
                         foreach ($ra as $fa) {
                             $about = $this->_addChild($container, 'oai:about');
-                            $this->_addFragment($about, $fa['about']);
+                            $this->_addExtensionFragment($about, $fa['about']);
                         }
                     }
                 }
