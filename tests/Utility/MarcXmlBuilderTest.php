@@ -50,6 +50,7 @@ final class MarcXmlBuilderTest extends TestCase
 
         self::assertSame('cr|||||', $xpath->evaluate('string(/m:record/m:controlfield[@tag="007"])'));
         self::assertSame(40, strlen($xpath->evaluate('string(/m:record/m:controlfield[@tag="008"])')));
+        self::assertSame('Shopware', $xpath->evaluate('string(/m:record/m:datafield[@tag="040"]/m:subfield[@code="a"])'));
 
         self::assertSame('Transfer-URL', $xpath->evaluate('string(/m:record/m:datafield[@tag="856"]/m:subfield[@code="x"])'));
         self::assertSame('b', $xpath->evaluate('string(/m:record/m:datafield[@tag="093"]/m:subfield[@code="b"])'));
